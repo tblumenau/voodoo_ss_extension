@@ -42,6 +42,65 @@ function closestPreviousSibling(element, selector) {
     return null; // Return null if no matching sibling is found
 }
 
+const modal = document.createElement('div');
+modal.innerHTML = `
+  <div id="loginModal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%;">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username"><br>
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password"><br>
+        <input type="submit" value="Submit">
+      </form>
+    </div>
+  </div>
+`;
+document.body.appendChild(modal);
+
+// Show the modal when Unauthorized
+async function fetchData(url, loginUrl) {
+  try {
+    let response = await fetch(url,{
+        mode:'no-cors'
+    });
+    if (response.ok) {
+      let data = await response.json();
+      return data;
+    } else if (response.status === 401) { // Unauthorized
+      document.getElementById('loginModal').style.display = 'block';
+    } else {
+      throw new Error('Request failed');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+// Handle form submission
+document.getElementById('loginForm').addEventListener('submit', async function(event) {
+  event.preventDefault();
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const credentials = { username, password };
+  const data = await fetchData(originalUrl, loginUrl, credentials);
+  // Handle data
+});
+
+function launch(orderNumber, itemSku) {
+    chrome.storage.sync.get(['endpoint', 'name', 'color', 'seconds'], function(data) {
+        // Here you can use the options to modify the page, open modals, etc.
+        console.log('Options retrieved:', data);
+        url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
+        data.seconds+'&orderNumber='+orderNumber+'&itemSku='+itemSku;
+
+        // Open the URL in a new tab
+        fetchData(url, data.endpoint+'/login/');
+    });
+
+}
+
 function imageClickHandler(event) {
     // Handle the click event
     // console.log('Button clicked:', event.target);
@@ -51,10 +110,12 @@ function imageClickHandler(event) {
 
     // Get the parent div
     let parentDiv = event.target.parentElement;
+    let orderNumber = '';
+    let itemSku = '';
     //if parentDiv has an attribute of data-column set to order-number
     if (attribute=='c1') {
-        let orderNumber = parentDiv.innerText;
-        let itemSku = 'all';
+        orderNumber = parentDiv.innerText;
+        itemSku = 'all';
         console.log('Order Number:', orderNumber);
         console.log('Item SKU:', itemSku);        // Send a message to the background script
 
@@ -62,8 +123,8 @@ function imageClickHandler(event) {
         // chrome.runtime.sendMessage({ type: 'order-number', orderNumber });
     }
     else if (attribute=='c2') {
-        let itemSku = parentDiv.innerText;
-        let orderNumber = parentDiv.parentElement.firstChild.innerText;
+        itemSku = parentDiv.innerText;
+        orderNumber = parentDiv.parentElement.firstChild.innerText;
         if (itemSku.includes('Item')) {
             itemSku = 'all';
         }
@@ -76,12 +137,12 @@ function imageClickHandler(event) {
         // chrome.runtime.sendMessage({ type: 'item-sku', itemSku });
     }
     else if (attribute=='p2') {
-        let itemSku = parentDiv.innerText;
+        itemSku = parentDiv.innerText;
 
         //where there is more than one order selected
         let master = parentDiv.closest('div[class*="item-display-wrapper"]');
         let title = closestPreviousSibling(master,'div[class*="item-list-title"]');
-        let orderNumber = title.innerText;        
+        orderNumber = title.innerText;        
         orderNumber = orderNumber.replace('Items from Order #','');
 
         //if only one order was selected, the above will yield 'Items'
@@ -92,18 +153,28 @@ function imageClickHandler(event) {
         console.log('Order Number:', orderNumber);
         console.log('Item SKU:', itemSku);
     }
+    else if (attribute=='m1') {
+        let master = parentDiv.closest('div[class^="drawer"]');
+        master = master.querySelector('div[class*="order-info-order-number"]');
+        orderNumber = master.innerText;
+        orderNumber = orderNumber.replace('Order # ','');
+        itemSku = 'all';
+        console.log('Order Number:', orderNumber);
+        console.log('Item SKU:', itemSku);
+    }
     else if (attribute=='m2') {
         let master = parentDiv.parentElement.querySelector('div[class*="item-sku-with-order-number"]');
-        let itemSku = master.innerText;
+        itemSku = master.innerText;
         itemSku = itemSku.replace('SKU: ','');
 
         master = parentDiv.closest('div[class^="drawer"]');
         master = master.querySelector('div[class*="order-info-order-number"]');
-        let orderNumber = master.innerText;
+        orderNumber = master.innerText;
         orderNumber = orderNumber.replace('Order # ','');
         console.log('Order Number:', orderNumber);
         console.log('Item SKU:', itemSku);
     }
+    launch(orderNumber, itemSku);
 }
 
 
@@ -143,6 +214,9 @@ function addButtonToDivIfNeeded(div, type) {
     if (type!='m1' && type!='m2' && hasAncestorWithClass(div,'order-details-drawer')) {
         return;
     }
+    // if (type=='m1' && !hasAncestorWithClass(div,'shipment-items-section-header-labels')) {
+    //     return;
+    // }
 
     // Check if the div already has a button added by your script
     if (!div.querySelector('.my-custom-button')) { // Use a specific class to identify your buttons
@@ -190,6 +264,11 @@ function addButtonToDivIfNeeded(div, type) {
                 div.innerHTML = div.innerHTML.replace(uniquePlaceholder, button.outerHTML);
             }
         }
+        else if (type == 'm1') {
+            button.style.cssText = 'float: right; margin-top: 4px; margin-left: 10px; border: none; background: none;'; // Example style to right-justify the button
+            let master = div.querySelector('h2[class*="order-details-section-title"]');
+            master.appendChild(button);
+        }
         else {
             div.appendChild(button);
         }
@@ -226,9 +305,9 @@ const callback = function(mutationsList, observer) {
                     node.querySelectorAll('div[class^="item-sku-"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 'p2');
                     });
-                    // node.querySelectorAll('h2[class^="order-details-section-title"]').forEach(childDiv => {
-                    //     addButtonToDivIfNeeded(childDiv.parentElement, 'm1');
-                    // });
+                    node.querySelectorAll('div[class*="shipment-items-section-header-labels"]').forEach(childDiv => {
+                        addButtonToDivIfNeeded(childDiv.parentElement, 'm1');
+                    });
                     node.querySelectorAll('div[aria-labelledby="quantity"][role="cell"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 'm2');
                     });                
