@@ -1,0 +1,32 @@
+#helpText {
+    font-size: 1em; 
+    color: #666;
+    margin: 5px;
+}
+
+
+input#id_endpoint {
+    width: 500px; /* Makes the input field twice as wide */
+}
+
+input,select {
+    margin-bottom: 3px;
+}
+
+h1 {
+    font-size: 18px; /* 3/4 of 32px */
+}
+
+label {
+    display: block;
+    margin-bottom: 5px; /* Adjust the space between the label and the input field */
+}
+
+button {
+    margin-top: 10px; /* Adjust the space between the input field and the button */
+}
+
+small {
+    display: block;
+    margin-bottom: 10px;
+}

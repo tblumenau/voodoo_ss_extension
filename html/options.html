@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Options Page</title>
+    <link rel="stylesheet" href="../css/options.css">
+</head>
+
+<body>
+    <h1>Voodoo Robotics Settings</h1>
+    <div class="col-md-4">
+        <div id="div_id_endpoint" class="form-group">
+
+            <label for="endpoint">
+                Endpoint URL:
+            </label>
+            <div>
+                <input type="text" name='endpoint' id="id_endpoint" placeholder="https://www.voodoodevices.com/api">
+                <small id="hint_id_name" class="form-text text-muted">Enter the API endpoint URL (e.g., https://www.voodoodevices.com/api)</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div id="div_id_name" class="form-group">
+            <label for="id_name" class="">
+                Name
+            </label>
+            <div>
+                <input type="text" name="name" maxlength="32" class="textinput textInput form-control" id="id_name">
+                <small id="hint_id_name" class="form-text text-muted">You can add your name to all messages</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div id="div_id_color" class="form-group">
+            <label for="id_color" class=" requiredField">
+                Color<span class="asteriskField">*</span>
+            </label>
+            <div>
+                <select name="color" class="select form-control" id="id_color">
+                    <option value="red">red</option>
+                    <option value="green">green</option>
+                    <option value="blue">blue</option>
+                    <option value="cyan">cyan</option>
+                    <option value="magenta">magenta</option>
+                    <option value="yellow">yellow</option>
+                </select>
+                <small id="hint_id_color" class="form-text text-muted">Choose a color for your messages</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div id="div_id_seconds" class="form-group">
+            <label for="id_seconds" class=" requiredField">
+                Seconds<span class="asteriskField">*</span>
+            </label>
+            <div>
+                <input type="number" name="seconds" value="60" class="numberinput form-control" required=""
+                    id="id_seconds">
+                <small id="hint_id_seconds" class="form-text text-muted">Maximum time allowed to push the button</small>
+            </div>
+        </div>
+    </div>
+    <button id="save">Save</button>
+
+    <script src="../js/options.js"></script>
+</body>
+
+</html>
