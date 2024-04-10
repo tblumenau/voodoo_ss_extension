@@ -1,32 +1,67 @@
-#helpText {
-    font-size: 1em; 
-    color: #666;
-    margin: 5px;
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background-color: #f4f4f4;
+    text-align: center; /* Centers the content, including the logo and the form */
 }
 
-
-input#id_endpoint {
-    width: 500px; /* Makes the input field twice as wide */
-}
-
-input,select {
-    margin-bottom: 3px;
+.logo {
+    width: 128px; /* Adjust based on your logo's dimensions */
+    height: auto; /* Keeps the logo's aspect ratio intact */
+    margin-bottom: 20px; /* Adds some space between the logo and the heading */
 }
 
 h1 {
-    font-size: 18px; /* 3/4 of 32px */
+    color: #333;
+    margin-bottom: 40px; /* Ensures consistent spacing between elements */
+}
+
+.form-group {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 500px; /* Controls the width of the form groups */
+    text-align: left; /* Aligns the form elements to the left */
 }
 
 label {
     display: block;
-    margin-bottom: 5px; /* Adjust the space between the label and the input field */
-}
-
-button {
-    margin-top: 10px; /* Adjust the space between the input field and the button */
-}
-
-small {
-    display: block;
     margin-bottom: 10px;
+    color: #333;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+.form-check-input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.btn-info {
+    background-color: #0056b3;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: block;
+    width: auto;
+    max-width: 200px; /* Gives the button a manageable width */
+    margin: 20px auto; /* Centers the button below the form */
+}
+
+.btn-info:hover {
+    background-color: #004494;
+}
+
+.asteriskField {
+    color: red;
 }

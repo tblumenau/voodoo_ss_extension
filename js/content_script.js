@@ -42,64 +42,6 @@ function closestPreviousSibling(element, selector) {
     return null; // Return null if no matching sibling is found
 }
 
-const modal = document.createElement('div');
-modal.innerHTML = `
-  <div id="loginModal" style="display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
-    <div style="background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%;">
-      <h2>Login</h2>
-      <form id="loginForm">
-        <label for="username">Username:</label><br>
-        <input type="text" id="username" name="username"><br>
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" name="password"><br>
-        <input type="submit" value="Submit">
-      </form>
-    </div>
-  </div>
-`;
-document.body.appendChild(modal);
-
-// Show the modal when Unauthorized
-async function fetchData(url, loginUrl) {
-  try {
-    let response = await fetch(url,{
-        mode:'no-cors'
-    });
-    if (response.ok) {
-      let data = await response.json();
-      return data;
-    } else if (response.status === 401) { // Unauthorized
-      document.getElementById('loginModal').style.display = 'block';
-    } else {
-      throw new Error('Request failed');
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
-// Handle form submission
-document.getElementById('loginForm').addEventListener('submit', async function(event) {
-  event.preventDefault();
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
-  const credentials = { username, password };
-  const data = await fetchData(originalUrl, loginUrl, credentials);
-  // Handle data
-});
-
-function launch(orderNumber, itemSku) {
-    chrome.storage.sync.get(['endpoint', 'name', 'color', 'seconds'], function(data) {
-        // Here you can use the options to modify the page, open modals, etc.
-        console.log('Options retrieved:', data);
-        url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
-        data.seconds+'&orderNumber='+orderNumber+'&itemSku='+itemSku;
-
-        // Open the URL in a new tab
-        fetchData(url, data.endpoint+'/login/');
-    });
-
-}
 
 function imageClickHandler(event) {
     // Handle the click event
@@ -174,7 +116,16 @@ function imageClickHandler(event) {
         console.log('Order Number:', orderNumber);
         console.log('Item SKU:', itemSku);
     }
-    launch(orderNumber, itemSku);
+    chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber}, function(response) {
+        console.log('Received:', response);
+        if (response.success) {
+            console.log('Success!');
+        }
+        else {
+            console.log('Failed!');
+        }
+        // Use the options as needed here
+    });
 }
 
 
@@ -220,6 +171,7 @@ function addButtonToDivIfNeeded(div, type) {
 
     // Check if the div already has a button added by your script
     if (!div.querySelector('.my-custom-button')) { // Use a specific class to identify your buttons
+        
         const button = document.createElement('img');
         button.classList.add('my-custom-button'); // Add a class for easy identification
         button.style.cssText = 'float: right; margin-top: 6px; border: none; background: none;'; // Example style to right-justify the button
@@ -282,36 +234,43 @@ function addButtonToDivIfNeeded(div, type) {
 const callback = function(mutationsList, observer) {
     for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
-            mutation.addedNodes.forEach(node => {
-                // Check if the added node is a DIV and matches your criteria
-                // if (node.nodeType === Node.ELEMENT_NODE && (
-                //         node.matches('div[data-column="order-number"][role="cell"]') ||
-                //         node.matches('div[data-column="item-sku"][role="cell"]')
-                //     )
-                // ) {
-                //     addButtonToDivIfNeeded(node);
-                // }
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    // Additionally, check if there are matching child nodes in the added node
-                    node.querySelectorAll('div[data-column="order-number"][role="cell"]').forEach(childDiv => {
-                        addButtonToDivIfNeeded(childDiv, 'c1');
-                    });
-                    node.querySelectorAll('div[data-column="item-sku"][role="cell"]').forEach(childDiv => {
-                        addButtonToDivIfNeeded(childDiv, 'c2');
-                    });
-                    // node.querySelectorAll('div[class^="collapsible-list-item-header-content"]').forEach(childDiv => {
-                    //     addButtonToDivIfNeeded(childDiv, 'p1');
-                    // });                    
-                    node.querySelectorAll('div[class^="item-sku-"]').forEach(childDiv => {
-                        addButtonToDivIfNeeded(childDiv, 'p2');
-                    });
-                    node.querySelectorAll('div[class*="shipment-items-section-header-labels"]').forEach(childDiv => {
-                        addButtonToDivIfNeeded(childDiv.parentElement, 'm1');
-                    });
-                    node.querySelectorAll('div[aria-labelledby="quantity"][role="cell"]').forEach(childDiv => {
-                        addButtonToDivIfNeeded(childDiv, 'm2');
-                    });                
-                }
+            //get minimalmode from storage
+            chrome.storage.sync.get(['minimalmode'], function(data) {
+                mutation.addedNodes.forEach(node => {
+                    // Check if the added node is a DIV and matches your criteria
+                    // if (node.nodeType === Node.ELEMENT_NODE && (
+                    //         node.matches('div[data-column="order-number"][role="cell"]') ||
+                    //         node.matches('div[data-column="item-sku"][role="cell"]')
+                    //     )
+                    // ) {
+                    //     addButtonToDivIfNeeded(node);
+                    // }
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        // Additionally, check if there are matching child nodes in the added node
+                        if (!data.minimalmode) {
+                            
+                        
+                            node.querySelectorAll('div[data-column="order-number"][role="cell"]').forEach(childDiv => {
+                                addButtonToDivIfNeeded(childDiv, 'c1');
+                            });
+                            node.querySelectorAll('div[data-column="item-sku"][role="cell"]').forEach(childDiv => {
+                                addButtonToDivIfNeeded(childDiv, 'c2');
+                            });
+                        }
+                        // node.querySelectorAll('div[class^="collapsible-list-item-header-content"]').forEach(childDiv => {
+                        //     addButtonToDivIfNeeded(childDiv, 'p1');
+                        // });                    
+                        node.querySelectorAll('div[class^="item-sku-"]').forEach(childDiv => {
+                            addButtonToDivIfNeeded(childDiv, 'p2');
+                        });
+                        node.querySelectorAll('div[class*="shipment-items-section-header-labels"]').forEach(childDiv => {
+                            addButtonToDivIfNeeded(childDiv.parentElement, 'm1');
+                        });
+                        node.querySelectorAll('div[aria-labelledby="quantity"][role="cell"]').forEach(childDiv => {
+                            addButtonToDivIfNeeded(childDiv, 'm2');
+                        });                
+                    }
+                });
             });
         }
     }

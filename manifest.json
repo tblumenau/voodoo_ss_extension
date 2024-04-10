@@ -13,8 +13,7 @@
   "content_scripts": [
     {
       "matches": ["*://*.shipstation.com/*"],
-      "js": ["js/content_script.js"],
-      "css": ["css/modal.css"]
+      "js": ["js/content_script.js"]
     }
   ],
   "action": {
@@ -33,7 +32,8 @@
         "css/options.css",
         "icons/icon16.png",
         "icons/icon48.png",
-        "icons/icon128.png"
+        "icons/icon128.png",
+        "js/login.js"
       ],
       "matches": ["<all_urls>"]
     }
