@@ -58,8 +58,8 @@ function imageClickHandler(event) {
     if (attribute=='c1') {
         orderNumber = parentDiv.innerText;
         itemSku = 'all';
-        console.log('Order Number:', orderNumber);
-        console.log('Item SKU:', itemSku);        // Send a message to the background script
+        // console.log('Order Number:', orderNumber);
+        // console.log('Item SKU:', itemSku);        // Send a message to the background script
 
         // Send a message to the background script
         // chrome.runtime.sendMessage({ type: 'order-number', orderNumber });
@@ -74,12 +74,15 @@ function imageClickHandler(event) {
             const result = findPreviousSiblingWithNonEmptyFirstChildText(parentDiv.parentElement);
             orderNumber = result.firstChild.innerText;
         }
-        console.log('Order Number:', orderNumber);
-        console.log('Item SKU:', itemSku);        // Send a message to the background script
+        // console.log('Order Number:', orderNumber);
+        // console.log('Item SKU:', itemSku);        // Send a message to the background script
         // chrome.runtime.sendMessage({ type: 'item-sku', itemSku });
     }
     else if (attribute=='p2') {
         itemSku = parentDiv.innerText;
+        itemSku = itemSku.replace('SKU:','');
+        itemSku = itemSku.replace(/&nbsp;/g,'');
+        itemSku = itemSku.trim();
 
         //where there is more than one order selected
         let master = parentDiv.closest('div[class*="item-display-wrapper"]');
@@ -92,8 +95,8 @@ function imageClickHandler(event) {
             master = parentDiv.closest('div[class^="side-bar"]');
             orderNumber = master.firstChild.firstChild.firstChild.innerText;
         }
-        console.log('Order Number:', orderNumber);
-        console.log('Item SKU:', itemSku);
+        // console.log('Order Number:', orderNumber);
+        // console.log('Item SKU:', itemSku);
     }
     else if (attribute=='m1') {
         let master = parentDiv.closest('div[class^="drawer"]');
@@ -101,28 +104,33 @@ function imageClickHandler(event) {
         orderNumber = master.innerText;
         orderNumber = orderNumber.replace('Order # ','');
         itemSku = 'all';
-        console.log('Order Number:', orderNumber);
-        console.log('Item SKU:', itemSku);
+        // console.log('Order Number:', orderNumber);
+        // console.log('Item SKU:', itemSku);
     }
     else if (attribute=='m2') {
         let master = parentDiv.parentElement.querySelector('div[class*="item-sku-with-order-number"]');
         itemSku = master.innerText;
-        itemSku = itemSku.replace('SKU: ','');
+        itemSku = itemSku.replace('SKU:','');
+        itemSku = itemSku.replace(/&nbsp;/g,'');
+        itemSku = itemSku.trim();
 
         master = parentDiv.closest('div[class^="drawer"]');
         master = master.querySelector('div[class*="order-info-order-number"]');
         orderNumber = master.innerText;
-        orderNumber = orderNumber.replace('Order # ','');
-        console.log('Order Number:', orderNumber);
-        console.log('Item SKU:', itemSku);
+        orderNumber = orderNumber.replace('Order #','');
+        orderNumber = orderNumber.replace(/&nbsp;/g,'');
+        orderNumber = orderNumber.trim();
+
+        // console.log('Order Number:', orderNumber);
+        // console.log('Item SKU:', itemSku);
     }
     chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber}, function(response) {
-        console.log('Received:', response);
-        if (response.success) {
-            console.log('Success!');
+        // console.log('Received:', response);
+        if (response.done) {
+            // console.log('Success!');
         }
         else {
-            console.log('Failed!');
+            // console.log('Failed!');
         }
         // Use the options as needed here
     });
@@ -235,7 +243,11 @@ const callback = function(mutationsList, observer) {
     for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
             //get minimalmode from storage
-            chrome.storage.sync.get(['minimalmode'], function(data) {
+            chrome.storage.local.get({minimalmode: true}, function(data) {
+                if (chrome.runtime.lastError) {
+                    console.error('Error retrieving settings:', chrome.runtime.lastError);
+                    return; // Exit the callback if an error occurred
+                }
                 mutation.addedNodes.forEach(node => {
                     // Check if the added node is a DIV and matches your criteria
                     // if (node.nodeType === Node.ELEMENT_NODE && (

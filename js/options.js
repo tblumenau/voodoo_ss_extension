@@ -5,7 +5,7 @@ function saveOptions() {
     const color = document.getElementById('id_color').value;
     const seconds = document.getElementById('id_seconds').value;
     const minimalmode = document.getElementById('id_minimal_mode').checked;
-    chrome.storage.sync.set({endpoint,name,color,seconds,minimalmode}, function() {
+    chrome.storage.local.set({endpoint,name,color,seconds,minimalmode}, function() {
         console.log('Settings saved.');
         window.close(); // Close the options window
     });
@@ -13,7 +13,13 @@ function saveOptions() {
 
 function restoreOptions() {
     // Request all keys at once
-    chrome.storage.sync.get(['endpoint', 'name', 'color', 'seconds', 'minimalmode'], function(data) {
+    chrome.storage.local.get({
+        endpoint: 'https://www.voodoodevices.com/api', 
+        name: '', 
+        color: 'red', 
+        seconds: 60, 
+        minimalmode: false
+    }, function(data) {
         // Assign the retrieved values
         if (data.endpoint) document.getElementById('id_endpoint').value = data.endpoint;
         if (data.name) document.getElementById('id_name').value = data.name;
@@ -26,3 +32,52 @@ function restoreOptions() {
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('save').addEventListener('click', saveOptions);
+
+document.addEventListener('DOMContentLoaded', function() {
+    chrome.storage.local.get('apikey', function(data) {
+        if (data.apikey) {
+            var logoutButton = document.createElement('button');
+            logoutButton.textContent = 'Logout';
+            logoutButton.id = 'logout';
+            logoutButton.className = 'btn btn-info';
+            logoutButton.addEventListener('click', function() {
+                chrome.storage.local.remove('apikey', function() {
+                    console.log('User logged out.');
+                    // You can also refresh the page to update the UI
+                    location.reload();
+                });
+            });
+            document.getElementById('logout-button-container').appendChild(logoutButton);
+        }
+    });
+});
+
+
+
+
+// Existing code for addLogEntry and other functions...
+
+
+// Load logs on opening the options page
+document.addEventListener('DOMContentLoaded', loadConsoleLog);
+
+function loadConsoleLog() {
+    chrome.storage.local.get({consoleLog: []}, function(data) {
+        data.consoleLog.forEach(appendLogToDOM);
+    });
+}
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    if (request.action === "addLogEntry" && request.message) {
+        appendLogToDOM(request.message);
+        sendResponse({result: "success"});
+    }
+});
+
+function appendLogToDOM(logEntry) {
+    const logContainer = document.getElementById('consoleLog');
+    const logElement = document.createElement('div');
+    logElement.textContent = logElement.innerText = logEntry;
+    logContainer.appendChild(logElement);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}

@@ -1,47 +1,72 @@
-// Listen for clicks on the extension's icon.
-chrome.action.onClicked.addListener((tab) => {
-    chrome.runtime.openOptionsPage();
-});
+const logQueue = [];
+let processingQueue = false;
 
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-    if (message.action === "voodooCall") {
-        chrome.storage.sync.get(['endpoint', 'name', 'color', 'seconds','apikey','datestamp'], function(data) {
-            // Here you can use the options to modify the page, open modals, etc.
-            console.log('Options retrieved:', message);
-            //if the datestamp is more than 240 hours old, clear the apikey
-            if (data.datestamp) {
-                let date = new Date().getTime();
-                let diff = date - data.datestamp;
-                let hours = diff / 1000 / 60 / 60;
-                if (hours > 240) {
-                    chrome.storage.sync.remove('apikey', function() {
-                        console.log('Api Key removed.');
-                    });
-                    data.apikey = null;
+function logFromBackground(message) {
+    const entry = `${new Date().toLocaleString()}: ${message}`;
+    logQueue.push(entry);
+    processQueue();
+}
+
+function processQueue() {
+    if (processingQueue || logQueue.length === 0) return;
+    processingQueue = true;
+
+    const entry = logQueue.shift();
+    chrome.storage.local.get({consoleLog: []}, function(data) {
+        data.consoleLog.push(entry);
+        if (data.consoleLog.length > 100) {
+            data.consoleLog.shift(); // Keep only the latest 100 entries
+        }
+        chrome.storage.local.set({consoleLog: data.consoleLog}, function() {
+            chrome.runtime.sendMessage({
+                action: "addLogEntry",
+                message: entry
+            }, function(response) {
+                if (chrome.runtime.lastError) {
+                    // Optionally handle the error here, such as logging it
                 }
-            }
-            else {
-                chrome.storage.sync.remove('apikey', function() {
-                    console.log('Api Key removed.');
-                });
-                data.apikey = null;
-            }
-            url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
-            data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku;
-    
-            if (!fetchData(url,data.apikey)) {
-                // Show the login modal
-                doModalThenFetch(data.endpoint+'/user/login/',url,data.apikey);
-            }
-
+                // Continue processing the next item in the queue
+                processingQueue = false;
+                processQueue();
+            });
         });
+    });
+}
+
+
+async function processMessage(message) {
+    let data = await new Promise((resolve) => {
+        chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey'], function(result) {
+            resolve(result);
+        });
+    });
+    logFromBackground('Processing request for order number: ' + message.orderNumber + ' and item SKU: ' + message.itemSku);
+    
+    url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
+    data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku;
+
+    if (!(await fetchData(url,data.apikey))) {
+        // Show the login modal
+        doModalThenFetch(data.endpoint+'/user/login/',url,data.apikey);
+    }
+
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "voodooCall") {
+        processMessage(message);
         sendResponse({done: true});
-        return false;
+        return true; // keep the message channel open until sendResponse is called
     }
 });
 
-
 async function fetchData(url, apikey) {
+    if (!apikey) {
+        logFromBackground('Not logged in.');
+        return false;
+    }
+    logFromBackground('Attempting: ' + url);
+    const startTime = new Date().getTime();
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -49,16 +74,38 @@ async function fetchData(url, apikey) {
                 'api-key': apikey,
             },
         });
-
+        if (!response.ok) {
+            logFromBackground(`Error: ${response.status} ${response.statusText}`);
+            return false;
+        }
+        const endTime = new Date().getTime();
+        const elapsedTime = endTime - startTime;
         if (response.ok) {
-            console.log(response);
+            // console.log(response);
+            logFromBackground('Success: ' + response.statusText);
+            response.json().then(data => {
+                logFromBackground('ShipStationTime: ' + parseFloat(data.ShipStationTime)*1000 + ' ms');
+                const vtime = elapsedTime - parseFloat(data.ShipStationTime)*1000;
+                logFromBackground('VoodooTime: ' + vtime + ' ms');
+
+                if (data.issues) {
+                    for (let issue of data.issues) {
+                        logFromBackground('Issue: ' + issue);
+                    }
+                }
+            });
+            logFromBackground('Total elapsed time: ' + elapsedTime + ' ms');
+    
             return true;
         } else {
-            console.log(response);
+            // console.log(response);
+            logFromBackground('Failed: ' + response.statusText);
+            logFromBackground('Total elapsed time: ' + elapsedTime + ' ms');
             return false;
         }
     } catch (error) {
-        console.log('Error:', error);
+        // console.log('Error:', error);
+        logFromBackground('Communication error: ' + error);
         return false;
     }
 }
@@ -77,6 +124,7 @@ function waitForLogin() {
 
 
 async function doModalThenFetch(loginUrl,furl,apikey) {
+    logFromBackground('Getting new login credentials.');
     const modalUrl = chrome.runtime.getURL("html/modal.html");
     const windowOptions = {
         url: modalUrl,
@@ -87,9 +135,11 @@ async function doModalThenFetch(loginUrl,furl,apikey) {
 
     chrome.windows.create(windowOptions);
     const loginRequest = await waitForLogin();
-    console.log('Login request:', loginRequest);
-    console.log('To:', loginUrl);
+    // console.log('Login request:', loginRequest);
+    // console.log('To:', loginUrl);
     // Send the login request to the server
+    logFromBackground('Sending login request to ' + loginUrl + ' with username: ' + loginRequest.username);
+    const startTime = new Date().getTime();
     fetch(loginUrl, {
         method: 'POST',
         headers: {
@@ -101,27 +151,42 @@ async function doModalThenFetch(loginUrl,furl,apikey) {
         }),
     })
     .then(response => {
+        if (!response.ok) {
+            logFromBackground(`Communication error: ${response.status} ${response.statusText}`);
+            return;
+        }
+        const endTime = new Date().getTime();
+        const elapsedTime = endTime - startTime;
         // Log the entire response
-        console.log(response);
+        logFromBackground('Login response: ' + response.statusText);
+        logFromBackground('Login request took: ' + elapsedTime + ' ms');
+
+        // console.log(response);
         // Log the response text if available
         response.json().then(res => {
             if (res) {
-                console.log(res);
+                // console.log(res);
                 apikey = res.apikey;
-                console.log('Key:', apikey);
-                datestamp = new Date().getTime();
+                // console.log('Key:', apikey);
                 //save the key
-                chrome.storage.sync.set({apikey,datestamp}, function() {
-                    console.log('Api Key saved.');
+                chrome.storage.local.set({apikey}, function() {
+                    // console.log('Api Key saved.');
                 });
                 fetchData(furl,apikey);
             } else {
-                console.log('No response json found.');
+                // console.log('No response json found.');
+                logFromBackground('Failure details: ' + response.body);
             }
         });
 
     })
     .catch(error => {
-        console.log(error);
+        // console.log(error);
+        logFromBackground('Communication error: ' + error);
     });
 }
+
+// Listen for clicks on the extension's icon.
+chrome.browserAction.onClicked.addListener((tab) => {
+    chrome.runtime.openOptionsPage();
+});
