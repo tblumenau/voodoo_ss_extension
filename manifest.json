@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Voodoo ShipStation Extension",
   "version": "1.0",
-  "description": "Injects HTML button into secure ShipStation pages to display a modal dialog and/or make a REST API call to the Big Block server to activate lights.",
+  "description": "Injects HTML buttons into ShipStation pages to make REST API calls to the Big Block server to activate lights.",
   "permissions": [
     "activeTab",
     "storage"
