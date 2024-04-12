@@ -54,16 +54,14 @@ function imageClickHandler(event) {
     let parentDiv = event.target.parentElement;
     let orderNumber = '';
     let itemSku = '';
-    //if parentDiv has an attribute of data-column set to order-number
+
+    //c1 is the order column
     if (attribute=='c1') {
         orderNumber = parentDiv.innerText;
         itemSku = 'all';
-        // console.log('Order Number:', orderNumber);
-        // console.log('Item SKU:', itemSku);        // Send a message to the background script
-
-        // Send a message to the background script
-        // chrome.runtime.sendMessage({ type: 'order-number', orderNumber });
     }
+
+    //c2 is the item SKU column
     else if (attribute=='c2') {
         itemSku = parentDiv.innerText;
         orderNumber = parentDiv.parentElement.firstChild.innerText;
@@ -74,10 +72,11 @@ function imageClickHandler(event) {
             const result = findPreviousSiblingWithNonEmptyFirstChildText(parentDiv.parentElement);
             orderNumber = result.firstChild.innerText;
         }
-        // console.log('Order Number:', orderNumber);
-        // console.log('Item SKU:', itemSku);        // Send a message to the background script
-        // chrome.runtime.sendMessage({ type: 'item-sku', itemSku });
     }
+
+    //p1 is the top of the side panel
+
+    //p2 is the item SKU in the side panel
     else if (attribute=='p2') {
         itemSku = parentDiv.innerText;
         itemSku = itemSku.replace('SKU:','');
@@ -95,18 +94,19 @@ function imageClickHandler(event) {
             master = parentDiv.closest('div[class^="side-bar"]');
             orderNumber = master.firstChild.firstChild.firstChild.innerText;
         }
-        // console.log('Order Number:', orderNumber);
-        // console.log('Item SKU:', itemSku);
+
     }
+
+    //m1 is the top of the master panel (once an order is clicked on)
     else if (attribute=='m1') {
         let master = parentDiv.closest('div[class^="drawer"]');
         master = master.querySelector('div[class*="order-info-order-number"]');
         orderNumber = master.innerText;
         orderNumber = orderNumber.replace('Order # ','');
         itemSku = 'all';
-        // console.log('Order Number:', orderNumber);
-        // console.log('Item SKU:', itemSku);
     }
+
+    //m2 is the item SKU in the master panel
     else if (attribute=='m2') {
         let master = parentDiv.parentElement.querySelector('div[class*="item-sku-with-order-number"]');
         itemSku = master.innerText;
@@ -120,31 +120,20 @@ function imageClickHandler(event) {
         orderNumber = orderNumber.replace('Order #','');
         orderNumber = orderNumber.replace(/&nbsp;/g,'');
         orderNumber = orderNumber.trim();
-
-        // console.log('Order Number:', orderNumber);
-        // console.log('Item SKU:', itemSku);
     }
     chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber}, function(response) {
-        // console.log('Received:', response);
+        // for now, background.js only returns true in the done parameter
         if (response.done) {
-            // console.log('Success!');
         }
         else {
-            // console.log('Failed!');
         }
-        // Use the options as needed here
     });
 }
 
 
-// Function to add a button to a div if it doesn't already have one
 
 
-const imageUrl = chrome.runtime.getURL('icons/icon16.png');
-
-
-
-
+//check if some parent or parent of a parent, etc. has a class that starts with the given prefix
 function hasAncestorWithClass(element, classPrefix) {
     let currentElement = element.parentElement;
 
@@ -163,7 +152,14 @@ function hasAncestorWithClass(element, classPrefix) {
     return false; // No matching ancestor was found
 }
 
+// Function to add a button to a div if it doesn't already have one
+
+//make this a global load so that it doesn't neet to be repeatedly loaded
+const imageUrl = chrome.runtime.getURL('icons/icon16.png');
+
 function addButtonToDivIfNeeded(div, type) {
+
+    //There are a few cases where we don't want to add a button
     if (div.innerText.trim() === '') {
         return;
     }
@@ -173,34 +169,38 @@ function addButtonToDivIfNeeded(div, type) {
     if (type!='m1' && type!='m2' && hasAncestorWithClass(div,'order-details-drawer')) {
         return;
     }
+
+
     // if (type=='m1' && !hasAncestorWithClass(div,'shipment-items-section-header-labels')) {
     //     return;
     // }
 
-    // Check if the div already has a button added by your script
-    if (!div.querySelector('.my-custom-button')) { // Use a specific class to identify your buttons
+    // Check if the div already has a button added by the script
+    if (!div.querySelector('.my-custom-button')) { // We use this specific class to identify our buttons
         
-        const button = document.createElement('img');
+        const button = document.createElement('img');  //notice 'button' is a misnomer, it's an img tag
         button.classList.add('my-custom-button'); // Add a class for easy identification
-        button.style.cssText = 'float: right; margin-top: 6px; border: none; background: none;'; // Example style to right-justify the button
-        // if (type == 'p1') {
-        //     button.style.cssText = 'float: right; margin-top: 4px; margin-left: 10px; border: none; background: none;'; // Example style to right-justify the button
-        // }
+        button.style.cssText = 'float: right; margin-top: 6px; border: none; background: none;'; 
+        // Example style to right-justify the button
+        // We modify as needed, below
+
+
         if (type == 'p2') {
-            button.style.cssText = 'float: right; margin-bottom: 7px; border: none; background: none;'; // Example style to right-justify the button
+            button.style.cssText = 'float: right; margin-bottom: 7px; border: none; background: none;'; 
         }
         else if (type == 'm2') {
-            button.style.cssText = 'float: right; margin-bottom: 8px; margin-left: 10px; border: none; background: none;'; // Example style to right-justify the button
+            button.style.cssText = 'float: right; margin-bottom: 8px; margin-left: 10px; border: none; background: none;'; 
         }
 
         // const img = document.createElement('img');
-        button.src = imageUrl; // Path to your image
+        // above moved to global
+
+        button.src = imageUrl; // Path to the image
         button.width = 16;
         button.height = 16;
         button.setAttribute('vType', type);
         
     
-        // button.appendChild(img);
         if (type == 'p1') {
             const regex = /Item(s?)/;
             if (regex.test(div.textContent)) {
@@ -232,6 +232,8 @@ function addButtonToDivIfNeeded(div, type) {
         else {
             div.appendChild(button);
         }
+
+        // Make sure we add a click handler to the button, wherever we inserted it
         div.querySelectorAll('img.my-custom-button').forEach(childDiv => {
             childDiv.addEventListener('click', imageClickHandler);
         });
@@ -239,24 +241,28 @@ function addButtonToDivIfNeeded(div, type) {
 }
 
 // MutationObserver callback function
+// This is called whenever anything changes in the interface
+// We get a list of the changes
+// We loop through the changes and check if they are the type we want
+// If they are, we check if they are the specific elements we want
+
 const callback = function(mutationsList, observer) {
     for (const mutation of mutationsList) {
         if (mutation.type === 'childList') {
             //get minimalmode from storage
             chrome.storage.local.get({minimalmode: true}, function(data) {
+
+                // This was a useful debug step
+                // chrome.storage.sync was not working on firefox
+                // Below helped identify this problem
                 if (chrome.runtime.lastError) {
                     console.error('Error retrieving settings:', chrome.runtime.lastError);
                     return; // Exit the callback if an error occurred
                 }
+
+
                 mutation.addedNodes.forEach(node => {
-                    // Check if the added node is a DIV and matches your criteria
-                    // if (node.nodeType === Node.ELEMENT_NODE && (
-                    //         node.matches('div[data-column="order-number"][role="cell"]') ||
-                    //         node.matches('div[data-column="item-sku"][role="cell"]')
-                    //     )
-                    // ) {
-                    //     addButtonToDivIfNeeded(node);
-                    // }
+
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         // Additionally, check if there are matching child nodes in the added node
                         if (!data.minimalmode) {
@@ -269,9 +275,15 @@ const callback = function(mutationsList, observer) {
                                 addButtonToDivIfNeeded(childDiv, 'c2');
                             });
                         }
+
+                        //we're not doing p1 (for now)
+                        //It's complicated if there is more than one order selected
+                        //The side panel might be an amalgamation of multiple orders
+                        
                         // node.querySelectorAll('div[class^="collapsible-list-item-header-content"]').forEach(childDiv => {
                         //     addButtonToDivIfNeeded(childDiv, 'p1');
-                        // });                    
+                        // });           
+
                         node.querySelectorAll('div[class^="item-sku-"]').forEach(childDiv => {
                             addButtonToDivIfNeeded(childDiv, 'p2');
                         });

@@ -5,7 +5,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
 
     // Send credentials back to the background script
     chrome.runtime.sendMessage({action: "login", username, password}, function(response) {
-        // Assuming you receive a response indicating success
+        // Assuming we receive a response indicating success
         // Check for success if necessary
         window.close(); // Close the login window
     });

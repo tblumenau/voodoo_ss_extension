@@ -1,3 +1,7 @@
+
+// logFromBackground would miss a bunch of log entries if fired too quickly
+// so we had to add this silly queueing mechanism
+// The problem that still exists is that sometimes queue entries are out of order
 const logQueue = [];
 let processingQueue = false;
 
@@ -27,13 +31,19 @@ function processQueue() {
                 }
                 // Continue processing the next item in the queue
                 processingQueue = false;
+                // CRITICAL call right here.  Note the recursion!
                 processQueue();
             });
         });
     });
 }
 
-
+// This needs to be a separate async function (not in the addListener callback directly)
+// to avoid blocking the message channel
+// Sometimes the user will click very quickly on different idons
+// and a message is not completed before another one is sent
+// Note that prcoessing (without login) messages can typically take a second or two to complete
+// Most of that time is because of ShipStation's slow API
 async function processMessage(message) {
     let data = await new Promise((resolve) => {
         chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey'], function(result) {
@@ -45,21 +55,32 @@ async function processMessage(message) {
     url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
     data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku;
 
+
+    //IMPORTANT, IMPORTANT, IMPORTANT
+    //Notice this important strategy:  We attempt to do the transaction-->if it fails, then we
+    //retry after attempting a login. 
     if (!(await fetchData(url,data.apikey))) {
-        // Show the login modal
+        //critical await above!  Who would ever want an if statement to just go ahead?!
+        //Duh!
+
+        // Show the login modal if needed
         doModalThenFetch(data.endpoint+'/user/login/',url,data.apikey);
     }
 
 }
 
+//This is where messages arrive from the content script running inside the ShipStation webpage
+//The message is a request to light up one or more devices
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "voodooCall") {
-        processMessage(message);
-        sendResponse({done: true});
-        return true; // keep the message channel open until sendResponse is called
+        processMessage(message); //async call
+        sendResponse({done: true}); //so this happens immediately
+        return true;
     }
 });
 
+
+//Make a GET request to the Big Block server using the temporary API key
 async function fetchData(url, apikey) {
     if (!apikey) {
         logFromBackground('Not logged in.');
@@ -101,6 +122,22 @@ async function fetchData(url, apikey) {
             // console.log(response);
             logFromBackground('Failed: ' + response.statusText);
             logFromBackground('Total elapsed time: ' + elapsedTime + ' ms');
+
+            //It's unclear that we want to return false here for EVERY call failure
+            //A failure would pop up the login modal
+            //But there might be cases where there is no need to login
+            //What are some result codes that would indicate no need to login?
+
+            //401 Unauthorized would definitely indicate a need to login
+            //But what about 404 Not Found?  Or 403 Forbidden?
+            //Or 500 Internal Server Error?
+            //fetch is such garbage with its preflight OPTIONS bs that often you
+            //don't get real error messages.
+
+            //If the user entered the wrong URL, we really aught to tell them that server
+            //wasn't found or that URL was invalid (CORS error or 404)
+
+            //This is the weakness of a writing an extension in a very constrained security environment
             return false;
         }
     } catch (error) {
@@ -110,7 +147,9 @@ async function fetchData(url, apikey) {
     }
 }
 
-
+//I don't particularly like the way Promises work in Javascript
+//But I don't particularly like Javascript either
+//Oh well...
 function waitForLogin() {
     return new Promise((resolve, reject) => {
         chrome.runtime.onMessage.addListener(function listener(request, sender, sendResponse) {
@@ -125,6 +164,12 @@ function waitForLogin() {
 
 async function doModalThenFetch(loginUrl,furl,apikey) {
     logFromBackground('Getting new login credentials.');
+
+    // Open the modal window to get the login credentials
+    //we just need the username  and password
+    //In the future, consider making this a window that is connected
+    //directly to the Big Block server, i.e. loaded from Big Block
+    //could we get access to the session cookie or apikey that way?
     const modalUrl = chrome.runtime.getURL("html/modal.html");
     const windowOptions = {
         url: modalUrl,
@@ -135,9 +180,10 @@ async function doModalThenFetch(loginUrl,furl,apikey) {
 
     chrome.windows.create(windowOptions);
     const loginRequest = await waitForLogin();
-    // console.log('Login request:', loginRequest);
-    // console.log('To:', loginUrl);
-    // Send the login request to the server
+    //not the above sits and spins
+    //who knows what other requests are arriving!
+    //whatever!
+    
     logFromBackground('Sending login request to ' + loginUrl + ' with username: ' + loginRequest.username);
     const startTime = new Date().getTime();
     fetch(loginUrl, {
@@ -161,27 +207,28 @@ async function doModalThenFetch(loginUrl,furl,apikey) {
         logFromBackground('Login response: ' + response.statusText);
         logFromBackground('Login request took: ' + elapsedTime + ' ms');
 
-        // console.log(response);
-        // Log the response text if available
         response.json().then(res => {
+            //notice that the temporary api key is returned in the JSON
+            //it is labelled 'apikey' and current setting is for 14 days
+            //actually it's using Django's settings.SESSION_COOKIE_AGE
+            //so we parallel the lifetime of a session
             if (res) {
-                // console.log(res);
                 apikey = res.apikey;
-                // console.log('Key:', apikey);
+
                 //save the key
                 chrome.storage.local.set({apikey}, function() {
                     // console.log('Api Key saved.');
                 });
+
+                //okay, now do the original request
                 fetchData(furl,apikey);
             } else {
-                // console.log('No response json found.');
                 logFromBackground('Failure details: ' + response.body);
             }
         });
 
     })
     .catch(error => {
-        // console.log(error);
         logFromBackground('Communication error: ' + error);
     });
 }

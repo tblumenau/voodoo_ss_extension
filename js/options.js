@@ -53,11 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-
-
-// Existing code for addLogEntry and other functions...
-
-
 // Load logs on opening the options page
 document.addEventListener('DOMContentLoaded', loadConsoleLog);
 
@@ -67,6 +62,10 @@ function loadConsoleLog() {
     });
 }
 
+//The obove code prints the log when the options page is opened.  The code below 
+//listens for new messages from the background script and appends them to the log.
+//It's the background script's responsibility to store the log entries so if the
+//options page is closed and reopened, the log gets reloaded properly.
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === "addLogEntry" && request.message) {
         appendLogToDOM(request.message);
