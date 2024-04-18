@@ -42,6 +42,22 @@ function closestPreviousSibling(element, selector) {
     return null; // Return null if no matching sibling is found
 }
 
+function closestNextSibling(element, selector) {
+    // Start with the immediate next sibling
+    let nextSibling = element.nextElementSibling;
+    
+    // Iterate over next siblings until a match is found or there are no more siblings
+    while (nextSibling !== null) {
+        if (nextSibling.matches(selector)) {
+            return nextSibling; // Return the matching sibling
+        }
+        // Move to the next sibling
+        nextSibling = nextSibling.nextElementSibling;
+    }
+    
+    return null; // Return null if no matching sibling is found
+}
+
 
 function imageClickHandler(event) {
     // Handle the click event
@@ -54,6 +70,7 @@ function imageClickHandler(event) {
     let parentDiv = event.target.parentElement;
     let orderNumber = '';
     let itemSku = '';
+    let quantity = '';
 
     //c1 is the order column
     if (attribute=='c1') {
@@ -82,6 +99,12 @@ function imageClickHandler(event) {
         itemSku = itemSku.replace('SKU:','');
         itemSku = itemSku.replace(/&nbsp;/g,'');
         itemSku = itemSku.trim();
+
+        displayWrapper = parentDiv.closest('div[class*="item-display-wrapper"]');
+        quantity = closestNextSibling(displayWrapper,'div[class*="quantity-column"]').innerText;
+        quantity = quantity.replace(' ','');
+        quantity = quantity.replace(/&nbsp;/g,'');
+        quantity = quantity.trim(); 
 
         //where there is more than one order selected
         let master = parentDiv.closest('div[class*="item-display-wrapper"]');
@@ -114,6 +137,11 @@ function imageClickHandler(event) {
         itemSku = itemSku.replace(/&nbsp;/g,'');
         itemSku = itemSku.trim();
 
+        quantity = event.target.previousElementSibling.innerText;
+        quantity = quantity.replace(' ','');
+        quantity = quantity.replace(/&nbsp;/g,'');
+        quantity = quantity.trim(); 
+
         master = parentDiv.closest('div[class^="drawer"]');
         master = master.querySelector('div[class*="order-info-order-number"]');
         orderNumber = master.innerText;
@@ -121,7 +149,7 @@ function imageClickHandler(event) {
         orderNumber = orderNumber.replace(/&nbsp;/g,'');
         orderNumber = orderNumber.trim();
     }
-    chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber}, function(response) {
+    chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber, quantity: quantity}, function(response) {
         // for now, background.js only returns true in the done parameter
         if (response.done) {
         }

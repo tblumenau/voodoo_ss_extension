@@ -50,10 +50,14 @@ async function processMessage(message) {
             resolve(result);
         });
     });
-    logFromBackground('Processing request for order number: ' + message.orderNumber + ' and item SKU: ' + message.itemSku);
-    
+    if (message.quantity !='') {
+        logFromBackground('Processing request for order number: ' + message.orderNumber + ' and item SKU: ' + message.itemSku + ' with quantity ' + message.quantity);
+    }
+    else {
+        logFromBackground('Processing request for order number: ' + message.orderNumber + ' and item SKU: ' + message.itemSku);
+    }
     url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
-    data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku;
+    data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku+'&quantity='+message.quantity;
 
 
     //IMPORTANT, IMPORTANT, IMPORTANT
