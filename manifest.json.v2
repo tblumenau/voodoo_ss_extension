@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "Voodoo ShipStation Extension",
   "version": "1.0",
   "description": "Injects HTML buttons into ShipStation pages to make REST API calls to the Big Block server to activate lights.",
@@ -7,7 +7,7 @@
     "storage"
   ],
   "background": {
-    "service_worker": "js/background.js"
+    "scripts": ["js/background.js"]
   },
   "content_scripts": [
     {
@@ -15,7 +15,7 @@
       "js": ["js/content_script.js"]
     }
   ],
-  "action": {
+  "browser_action": {
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
@@ -23,19 +23,14 @@
     }
   },
   "web_accessible_resources": [
-    {
-      "resources": [
-        "html/modal.html", 
-        "html/options.html", 
-        "css/modal.css",
-        "css/options.css",
-        "icons/icon16.png",
-        "icons/icon48.png",
-        "icons/icon128.png",
-        "js/login.js"
-      ],
-      "matches": ["*://*.shipstation.com/*"]
-    }
+    "html/modal.html", 
+    "html/options.html", 
+    "css/modal.css",
+    "css/options.css",
+    "icons/icon16.png",
+    "icons/icon48.png",
+    "icons/icon128.png",
+    "js/login.js"
   ],
   "icons": {
     "16": "icons/icon16.png",

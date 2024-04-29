@@ -237,7 +237,13 @@ async function doModalThenFetch(loginUrl,furl,apikey) {
     });
 }
 
-// Listen for clicks on the extension's icon.
-chrome.browserAction.onClicked.addListener((tab) => {
+//Modified converting to manifest v3
+// // Listen for clicks on the extension's icon.
+// chrome.browserAction.onClicked.addListener((tab) => {
+//     chrome.runtime.openOptionsPage();
+// });
+
+
+chrome.action.onClicked.addListener((tab) => {
     chrome.runtime.openOptionsPage();
 });
