@@ -46,7 +46,7 @@ function processQueue() {
 // Most of that time is because of ShipStation's slow API
 async function processMessage(message) {
     let data = await new Promise((resolve) => {
-        chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey'], function(result) {
+        chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey','addextra'], function(result) {
             resolve(result);
         });
     });
@@ -58,6 +58,10 @@ async function processMessage(message) {
     }
     url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
     data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku+'&quantity='+message.quantity;
+    if (data.addextra) {
+        url += '&extra='+message.extra;
+    }
+    
 
 
     //IMPORTANT, IMPORTANT, IMPORTANT

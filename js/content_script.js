@@ -71,11 +71,13 @@ function imageClickHandler(event) {
     let orderNumber = '';
     let itemSku = '';
     let quantity = '';
+    let extra = '';
 
     //c1 is the order column
     if (attribute=='c1') {
         orderNumber = parentDiv.innerText;
         itemSku = 'all';
+        extra = orderNumber;
     }
 
     //c2 is the item SKU column
@@ -89,6 +91,7 @@ function imageClickHandler(event) {
             const result = findPreviousSiblingWithNonEmptyFirstChildText(parentDiv.parentElement);
             orderNumber = result.firstChild.innerText;
         }
+        extra = orderNumber;
     }
 
     //p1 is the top of the side panel
@@ -117,6 +120,7 @@ function imageClickHandler(event) {
             master = parentDiv.closest('div[class^="side-bar"]');
             orderNumber = master.firstChild.firstChild.firstChild.innerText;
         }
+        extra = orderNumber;
 
     }
 
@@ -127,6 +131,7 @@ function imageClickHandler(event) {
         orderNumber = master.innerText;
         orderNumber = orderNumber.replace('Order # ','');
         itemSku = 'all';
+        extra = orderNumber;
     }
 
     //m2 is the item SKU in the master panel
@@ -148,8 +153,30 @@ function imageClickHandler(event) {
         orderNumber = orderNumber.replace('Order #','');
         orderNumber = orderNumber.replace(/&nbsp;/g,'');
         orderNumber = orderNumber.trim();
+
+        extra = orderNumber;
     }
-    chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber, quantity: quantity}, function(response) {
+    else if (attribute=='b1') {
+        let orders = []
+        //let master = parentDiv.parentElement.parentElement.querySelector('div[class^="grid-rows-container"]');
+        //for each div inside master, if there is a div that has data-column=="order-number"
+        //then get the text inside that div and append it to the list of orders
+
+        //let children = document.querySelectorAll('div[class^="grid-rows-"]');
+        let children = document.querySelectorAll('div[data-column^="order-number"]');
+        children.forEach(childDiv => {
+            button = childDiv.querySelector('button');
+            if (button) {
+                orders.push(button.innerText);
+            }
+        });
+
+        //now set orderNumber to all the orders separated by a comma
+        orderNumber = orders.join(',');
+        itemSku = 'all';
+        extra = parentDiv.querySelector('button').innerText;
+    }
+    chrome.runtime.sendMessage({action: "voodooCall",itemSku: itemSku, orderNumber: orderNumber, quantity: quantity, extra: extra}, function(response) {
         // for now, background.js only returns true in the done parameter
         if (response.done) {
         }
@@ -257,6 +284,10 @@ function addButtonToDivIfNeeded(div, type) {
             let master = div.querySelector('h2[class*="order-details-section-title"]');
             master.appendChild(button);
         }
+        else if (type == 'b1') {
+            button.style.cssText = 'float: right; margin-left: 20px; margin-top: 6px; border: none; background: none;';
+            div.appendChild(button);
+        }
         else {
             div.appendChild(button);
         }
@@ -320,6 +351,9 @@ const callback = function(mutationsList, observer) {
                         });
                         node.querySelectorAll('div[aria-labelledby="quantity"][role="cell"]').forEach(childDiv => {
                             addButtonToDivIfNeeded(childDiv, 'm2');
+                        });
+                        node.querySelectorAll('div[class^="batch-title"]').forEach(childDiv => {
+                            addButtonToDivIfNeeded(childDiv, 'b1');
                         });                
                     }
                 });

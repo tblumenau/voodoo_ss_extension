@@ -5,7 +5,8 @@ function saveOptions() {
     const color = document.getElementById('id_color').value;
     const seconds = document.getElementById('id_seconds').value;
     const minimalmode = document.getElementById('id_minimal_mode').checked;
-    chrome.storage.local.set({endpoint,name,color,seconds,minimalmode}, function() {
+    const addextra = document.getElementById('id_addextra').checked;
+    chrome.storage.local.set({endpoint,name,color,seconds,minimalmode,addextra}, function() {
         console.log('Settings saved.');
         window.close(); // Close the options window
     });
@@ -18,7 +19,8 @@ function restoreOptions() {
         name: '', 
         color: 'red', 
         seconds: 60, 
-        minimalmode: false
+        minimalmode: false,
+        addextra: false
     }, function(data) {
         // Assign the retrieved values
         if (data.endpoint) document.getElementById('id_endpoint').value = data.endpoint;
@@ -26,6 +28,7 @@ function restoreOptions() {
         if (data.color) document.getElementById('id_color').value = data.color;
         if (data.seconds) document.getElementById('id_seconds').value = data.seconds;
         if (data.minimalmode) document.getElementById('id_minimal_mode').checked = data.minimalmode;
+        if (data.addextra) document.getElementById('id_addextra').checked = data.addextra;
     });
 }
 
