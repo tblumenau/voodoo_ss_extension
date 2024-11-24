@@ -1,4 +1,3 @@
-
 // logFromBackground would miss a bunch of log entries if fired too quickly
 // so we had to add this silly queueing mechanism
 // The problem that still exists is that sometimes queue entries are out of order
@@ -16,12 +15,12 @@ function processQueue() {
     processingQueue = true;
 
     const entry = logQueue.shift();
-    chrome.storage.local.get({consoleLog: []}, function(data) {
-        data.consoleLog.push(entry);
-        if (data.consoleLog.length > 100) {
-            data.consoleLog.shift(); // Keep only the latest 100 entries
+    chrome.storage.local.get({consoleLog: []}, function(storedData) {
+        storedData.consoleLog.push(entry);
+        if (storedData.consoleLog.length > 100) {
+            storedData.consoleLog.shift(); // Keep only the latest 100 entries
         }
-        chrome.storage.local.set({consoleLog: data.consoleLog}, function() {
+        chrome.storage.local.set({consoleLog: storedData.consoleLog}, function() {
             chrome.runtime.sendMessage({
                 action: "addLogEntry",
                 message: entry
@@ -45,8 +44,8 @@ function processQueue() {
 // Note that prcoessing (without login) messages can typically take a second or two to complete
 // Most of that time is because of ShipStation's slow API
 async function processMessage(message) {
-    let data = await new Promise((resolve) => {
-        chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey','addextra'], function(result) {
+    let storedData = await new Promise((resolve) => {
+        chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey','addorder'], function(result) {
             resolve(result);
         });
     });
@@ -56,9 +55,9 @@ async function processMessage(message) {
     else {
         logFromBackground('Processing request for order number: ' + message.orderNumber + ' and item SKU: ' + message.itemSku);
     }
-    url = data.endpoint+'/shipStationLaunch/?name='+data.name+'&color='+data.color+'&seconds='+
-    data.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku+'&quantity='+message.quantity;
-    if (data.addextra) {
+    url = storedData.endpoint+'/shipStationLaunch/?name='+storedData.name+'&color='+storedData.color+'&seconds='+
+    storedData.seconds+'&orderNumber='+message.orderNumber+'&itemSku='+message.itemSku+'&quantity='+message.quantity;
+    if (message.extra) {
         url += '&extra='+message.extra;
     }
     
@@ -67,15 +66,40 @@ async function processMessage(message) {
     //IMPORTANT, IMPORTANT, IMPORTANT
     //Notice this important strategy:  We attempt to do the transaction-->if it fails, then we
     //retry after attempting a login. 
-    if (!(await fetchData(url,data.apikey))) {
+    if (!(await fetchData(url,storedData.apikey,null))) {
         //critical await above!  Who would ever want an if statement to just go ahead?!
         //Duh!
 
         // Show the login modal if needed
-        doModalThenFetch(data.endpoint+'/user/login/',url,data.apikey);
+        doModalThenFetch(storedData.endpoint+'/user/login/',url,storedData.apikey,null);
     }
 
 }
+
+
+async function processMessageWithArray(message) {
+    let storedData = await new Promise((resolve) => {
+        chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey','addorder'], function(result) {
+            resolve(result);
+        });
+    });
+
+    logFromBackground('Processing device activations: ' + JSON.stringify(message) );
+    url = storedData.endpoint+'/devices/';
+
+    //IMPORTANT, IMPORTANT, IMPORTANT
+    //Notice this important strategy:  We attempt to do the transaction-->if it fails, then we
+    //retry after attempting a login. 
+    if (!(await fetchData(url,storedData.apikey,message.array))) {
+        //critical await above!  Who would ever want an if statement to just go ahead?!
+        //Duh!
+
+        // Show the login modal if needed
+        doModalThenFetch(storedData.endpoint+'/user/login/',url,storedData.apikey,message.array);
+    }
+
+}
+
 
 //This is where messages arrive from the content script running inside the ShipStation webpage
 //The message is a request to light up one or more devices
@@ -85,24 +109,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({done: true}); //so this happens immediately
         return true;
     }
+    else if (message.action === "voodooDevices") {
+        processMessageWithArray(message); //async call
+        sendResponse({done: true}); //so this happens immediately
+        return true;
+    }
 });
 
 
 //Make a GET request to the Big Block server using the temporary API key
-async function fetchData(url, apikey) {
+async function fetchData(url, apikey, array) {
     if (!apikey) {
         logFromBackground('Not logged in.');
         return false;
     }
     logFromBackground('Attempting: ' + url);
     const startTime = new Date().getTime();
+
+    let options = {
+        method: 'GET',
+        headers: {
+            'api-key': apikey,
+        }
+    }
+    if (array) {
+        options.method = 'POST';
+        options.body = JSON.stringify(array);
+        options.headers = {
+            'api-key': apikey,
+            'Content-Type': 'application/json',
+        }
+    }
+
+
     try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'api-key': apikey,
-            },
-        });
+        const response = await fetch(url, options);
         if (!response.ok) {
             logFromBackground(`Error: ${response.status} ${response.statusText}`);
             return false;
@@ -170,7 +211,7 @@ function waitForLogin() {
 }
 
 
-async function doModalThenFetch(loginUrl,furl,apikey) {
+async function doModalThenFetch(loginUrl,furl,apikey,array) {
     logFromBackground('Getting new login credentials.');
 
     // Open the modal window to get the login credentials
@@ -229,7 +270,7 @@ async function doModalThenFetch(loginUrl,furl,apikey) {
                 });
 
                 //okay, now do the original request
-                fetchData(furl,apikey);
+                fetchData(furl,apikey,array);
             } else {
                 logFromBackground('Failure details: ' + response.body);
             }

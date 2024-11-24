@@ -2,11 +2,15 @@
 function saveOptions() {
     const endpoint = document.getElementById('id_endpoint').value;
     const name = document.getElementById('id_name').value;
+    const pickword = document.getElementById('id_pickword').value;
     const color = document.getElementById('id_color').value;
     const seconds = document.getElementById('id_seconds').value;
     const minimalmode = document.getElementById('id_minimal_mode').checked;
-    const addextra = document.getElementById('id_addextra').checked;
-    chrome.storage.local.set({endpoint,name,color,seconds,minimalmode,addextra}, function() {
+    const addorder = document.getElementById('id_addorder').checked;
+    const addupc = document.getElementById('id_addupc').checked;
+    const addshipment = document.getElementById('id_addshipment').checked;
+    const autosubmit = document.getElementById('id_autosubmit').checked;
+    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addupc,addshipment,autosubmit}, function() {
         console.log('Settings saved.');
         window.close(); // Close the options window
     });
@@ -16,19 +20,27 @@ function restoreOptions() {
     // Request all keys at once
     chrome.storage.local.get({
         endpoint: 'https://www.voodoodevices.com/api', 
-        name: '', 
+        name: '',
+        pickword: '',
         color: 'red', 
         seconds: 60, 
         minimalmode: false,
-        addextra: false
-    }, function(data) {
+        addorder: false,
+        addupc: false,
+        addshipment: false,
+        autosubmit: false
+    }, function(storedData) {
         // Assign the retrieved values
-        if (data.endpoint) document.getElementById('id_endpoint').value = data.endpoint;
-        if (data.name) document.getElementById('id_name').value = data.name;
-        if (data.color) document.getElementById('id_color').value = data.color;
-        if (data.seconds) document.getElementById('id_seconds').value = data.seconds;
-        if (data.minimalmode) document.getElementById('id_minimal_mode').checked = data.minimalmode;
-        if (data.addextra) document.getElementById('id_addextra').checked = data.addextra;
+        if (storedData.endpoint) document.getElementById('id_endpoint').value = storedData.endpoint;
+        if (storedData.name) document.getElementById('id_name').value = storedData.name;
+        if (storedData.pickword) document.getElementById('id_pickword').value = storedData.pickword;
+        if (storedData.color) document.getElementById('id_color').value = storedData.color;
+        if (storedData.seconds) document.getElementById('id_seconds').value = storedData.seconds;
+        if (storedData.minimalmode) document.getElementById('id_minimal_mode').checked = storedData.minimalmode;
+        if (storedData.addorder) document.getElementById('id_addorder').checked = storedData.addorder;
+        if (storedData.addupc) document.getElementById('id_addupc').checked = storedData.addupc;
+        if (storedData.addshipment) document.getElementById('id_addshipment').checked = storedData.addshipment;
+        if (storedData.autosubmit) document.getElementById('id_autosubmit').checked = storedData.autosubmit;
     });
 }
 
@@ -37,8 +49,8 @@ document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('save').addEventListener('click', saveOptions);
 
 document.addEventListener('DOMContentLoaded', function() {
-    chrome.storage.local.get('apikey', function(data) {
-        if (data.apikey) {
+    chrome.storage.local.get('apikey', function(storedData) {
+        if (storedData.apikey) {
             var logoutButton = document.createElement('button');
             logoutButton.textContent = 'Logout';
             logoutButton.id = 'logout';
@@ -60,8 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', loadConsoleLog);
 
 function loadConsoleLog() {
-    chrome.storage.local.get({consoleLog: []}, function(data) {
-        data.consoleLog.forEach(appendLogToDOM);
+    chrome.storage.local.get({consoleLog: []}, function(storedData) {
+        storedData.consoleLog.forEach(appendLogToDOM);
     });
 }
 

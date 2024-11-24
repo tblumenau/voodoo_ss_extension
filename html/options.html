@@ -26,7 +26,9 @@
     <div class="form-group">
         <label for="id_name">Name:</label>
         <input type="text" name="name" maxlength="32" id="id_name">
-        <small id="hint_id_name" class="form-text text-muted">You can add your name to all messages</small>
+        <small id="hint_id_name" class="form-text text-muted">Display your name on devices</small>
+        <small id="hint_id_name2" class="form-text text-muted"><br><br>Devices can display five lines total, chosen from Name, Instruction, SKU, Order, Shipment, Batch Label, UPC, and Arrow.</small>
+        <small id="hint_id_name3" class="form-text text-muted"><br>Keep text to a minimum to improve productivity.  UPC barcode and arrow count as one each!</small>
     </div>
 
     <div class="form-group">
@@ -39,7 +41,7 @@
             <option value="magenta">magenta</option>
             <option value="yellow">yellow</option>
         </select>
-        <small id="hint_id_color" class="form-text text-muted">Choose a color for your messages</small>
+        <small id="hint_id_color" class="form-text text-muted">Choose a color for the light</small>
     </div>
 
     <div class="form-group">
@@ -51,15 +53,39 @@
     <div class="form-group">
         <label for="id_minimal_mode">Minimal Mode:</label>
         <input type="checkbox" name="minimal_mode" id="id_minimal_mode">
-        <small id="hint_id_minimal_mode" class="form-text text-muted">Turn off column display</small>
+        <small id="hint_id_minimal_mode" class="form-text text-muted">Hide extra icons in the ShipStation GUI</small>
     </div>
 
     <div class="form-group">
-        <label for="id_addextra">Add Extra:</label>
-        <input type="checkbox" name="addextra" id="id_addextra">
-        <small id="hint_id_addextra" class="form-text text-muted">Add extra identifying info on device</small>
+        <label for="id_pickword">Add Pick Word:</label>
+        <input type="text" name="pickword" maxlength="32" id="id_pickword">
+        <small id="hint_id_pickword" class="form-text text-muted">Instruction displayed on the device (leave blank or 'Pick' or 'Take' or 'Toma')</small>
     </div>
 
+
+    <div class="form-group">
+        <label for="id_addorder">Add Order Number:</label>
+        <input type="checkbox" name="addorder" id="id_addorder">
+        <small id="hint_id_addorder" class="form-text text-muted">Display order number on devices</small>
+    </div>
+
+    <div class="form-group">
+        <label for="id_addupc">Add UPC Barcode:</label>
+        <input type="checkbox" name="addupc" id="id_addupc">
+        <small id="hint_id_addupc" class="form-text text-muted">Display UPC barcode on devices</small>
+    </div>
+
+    <div class="form-group">
+        <label for="id_addshipment">Add Shipment:</label>
+        <input type="checkbox" name="addshipment" id="id_addshipment">
+        <small id="hint_id_addshipment" class="form-text text-muted">Display shipment number on devices</small>
+    </div>
+
+    <div class="form-group">
+        <label for="id_autosubmit">Auto Submit:</label>
+        <input type="checkbox" name="autosubmit" id="id_autosubmit">
+        <small id="hint_id_autosubmit" class="form-text text-muted">Light devices automatically for any order/shipment scanned</small>
+    </div>
 
     <button id="save" class="btn btn-info">Save</button>
     <div id="logout-button-container"></div>
