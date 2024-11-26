@@ -8,7 +8,7 @@ function getStoredData() {
     // Create a new Promise to handle the asynchronous operation
     let storedData = new Promise((resolve) => {
         // Use chrome.storage.local.get to retrieve the specified keys
-        chrome.storage.local.get(['endpoint', 'name', 'pickword', 'color', 'seconds', 'apikey', 'addorder', 'addupc', 'addshipment', 'beep', 'autosubmit', 'minimalmode'], function (result) {
+        chrome.storage.local.get(['endpoint', 'name', 'pickword', 'color', 'seconds', 'apikey', 'addorder', 'addupcbarcode', 'addshipment', 'beep', 'autosubmit', 'minimalmode'], function (result) {
             // Check for any errors during the retrieval
             if (chrome.runtime.lastError) {
                 // Log the error to the console for debugging purposes
@@ -372,7 +372,7 @@ function handleScanS1(storedData) {
         const quantity = sanitizeText(quantityElement.firstChild.innerText);
 
 
-        const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber);
+        const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber, productName);
 
         if (data) {
             array.push(data);
@@ -391,7 +391,7 @@ function handleScanS1(storedData) {
 
 
 // Helper function to create command data
-function createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber) {
+function createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber, productName) {
     
     // Generate the command data object
     const data = {
@@ -407,7 +407,9 @@ function createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, 
     if (storedData.name) data['line' + lineCount++] = storedData.name;
     if (storedData.pickword) data['line' + lineCount++] = storedData.pickword;
     data['line' + lineCount++] = itemSku;
-    if (storedData.addupc && itemUPC) data['barcode'] = itemUPC;
+    if (storedData.addproductname) data['line' + lineCount++] = productName;
+    if (storedData.addupcbarcode && itemUPC) data['barcode'] = itemUPC;
+    if (storedData.addskubarcode) data['barcode'] = itemSku;
     if (storedData.addorder) data['line' + lineCount++] = orderNumber;
     if (storedData.addshipment) data['line' + lineCount++] = shipmentNumber;
     if (storedData.beep) data['sound'] = '15,c5,4';
@@ -440,6 +442,7 @@ function handleScanS2(target,storedData) {
 
 
     // Extract SKU and sanitize
+    const productName = infoDiv.querySelector('span[class^="name-"]').innerText.trim();
     const skuLines = infoDiv.querySelectorAll('span[class^="sku-upc-"]');
 
     const itemSku = sanitizeText(skuLines[0].firstElementChild.innerText.replace('SKU:', ''));
@@ -454,7 +457,7 @@ function handleScanS2(target,storedData) {
     const quantity = sanitizeText(quantityElement.firstChild.innerText);
 
     // Generate command data
-    const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber);
+    const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber, productName);
 
     // Send the command to background.js
     chrome.runtime.sendMessage({ action: "voodooDevices", array: [data] }, (response) => {
@@ -652,7 +655,7 @@ async function doImageClickWork(target, attribute) {
                 data['line' + lineCount++] = storedData.pickword;
             }
             data['line' + lineCount++] = itemSku;
-            if (storedData.addupc && itemUPC) {
+            if (storedData.addupcbarcode && itemUPC) {
                 data['barcode'] = itemUPC;
             }
             if (storedData.addorder) {
@@ -747,7 +750,7 @@ async function doImageClickWork(target, attribute) {
             data['line' + lineCount++] = storedData.pickword;
         }
         data['line' + lineCount++] = itemSku;
-        if (storedData.addupc && itemUPC) {
+        if (storedData.addupcbarcode && itemUPC) {
             data['barcode'] = itemUPC;
         }
         if (storedData.addorder) {
@@ -840,7 +843,7 @@ const imageUrl = chrome.runtime.getURL('icons/icon16.png');
  *
  * @param {HTMLElement} div - The div element to which the button may be added.
  * @param {string} type - The type of button to add (used to identify the button).
- */
+ *
 async function addButtonToDivIfNeeded(div, type) {
 
 
@@ -851,11 +854,25 @@ async function addButtonToDivIfNeeded(div, type) {
     if (div.querySelector('div[class^="header"]')) {
         return;
     }
+
     if (type != 'm1' && type != 'm2' && hasAncestorWithClass(div, 'order-details-drawer')) {
         return;
     }
 
+    if (type == 's1') {
+        let sibling = div.previousElementSibling;
+        if (!sibling) return;
+        if (!sibling.matches('span[class^="label-"]')) return;
+        if (sibling.innerText != 'Order') return;
+    }
 
+    if (type == 's2') {
+        if (div.matches('div[class*="verified-quantity-count-"]')) return;
+        if (div.parentElement.matches('div[class*="verified-"]')) return;
+    }
+
+
+    
     // if (type=='m1' && !hasAncestorWithClass(div,'shipment-items-section-header-labels')) {
     //     return;
     // }
@@ -962,6 +979,136 @@ async function addButtonToDivIfNeeded(div, type) {
         });
     }
 }
+    */
+
+
+/**
+ * Checks if a button should be added to the div based on various conditions.
+ *
+ * @param {HTMLElement} div - The div element to check.
+ * @param {string} type - The type of button.
+ * @returns {boolean} - Returns true if the button should not be added.
+ */
+function shouldSkipAddingButton(div, type) {
+    if (div.innerText.trim() === '') return true;
+    if (div.querySelector('div[class^="header"]')) return true;
+
+    if (type !== 'm1' && type !== 'm2' && hasAncestorWithClass(div, 'order-details-drawer')) return true;
+
+    if (type === 's1') {
+        let sibling = div.previousElementSibling;
+        if (!sibling || !sibling.matches('span[class^="label-"]') || sibling.innerText !== 'Order') return true;
+    }
+
+    if (type === 's2') {
+        if (div.matches('div[class*="verified-quantity-count-"]')) return true;
+        if (div.parentElement.matches('div[class*="verified-"]')) return true;
+    }
+
+    return false;
+}
+
+/**
+ * Sets the button style based on its type.
+ *
+ * @param {HTMLElement} button - The button element.
+ * @param {string} type - The type of button.
+ */
+
+//p1 is the top of the side panel
+//p2 is the item SKU in the side panel
+//m1 is the top of the master panel (once an order is clicked on)
+//m2 is the item SKU in the master panel
+//c1 is the order column
+//c2 is the item SKU column
+//b1 is the batch button
+//s1 is the order scan button
+//s2 is the item scan button
+function setButtonStyle(button, type) {
+    const styles = {
+        default: 'float: right; margin-top: 6px; border: none; background: none;',
+        p2: 'float: right; margin-bottom: 7px; border: none; background: none;',
+        m2: 'float: right; margin-bottom: 8px; margin-left: 10px; border: none; background: none;',
+        c1: 'float: right; margin-top: -16px; border: none; background: none;',
+        p1: 'float: right; margin-top: 0px; margin-left: 10px; border: none; background: none;',
+        m1: 'float: right; margin-top: 4px; margin-left: 10px; border: none; background: none;',
+        b1: 'float: right; margin-left: 20px; margin-top: 6px; border: none; background: none;',
+        s1: 'margin-left: 4px; margin-top: 6px; border: none; background: none;',
+        s2: 'float: right; margin-left: 8px; margin-top: 2px; border: none; background: none;',
+    };
+
+    button.style.cssText = styles[type] || styles.default;
+}
+
+/**
+ * Handles button placement and additional behavior based on type.
+ *
+ * @param {HTMLElement} div - The div element to add the button.
+ * @param {HTMLElement} button - The button element.
+ * @param {string} type - The type of button.
+ */
+async function handleButtonPlacement(div, button, type) {
+    if (type === 'p1') {  //not currently used!
+        const regex = /Item(s?)/;
+        if (regex.test(div.textContent)) {
+            if (hasAncestorWithClass(div, 'orders-drawer-scrollable')) {
+                div.style.flex = '0';
+            }
+
+            const placeholder = '[[BUTTON_PLACEHOLDER]]';
+            div.innerHTML = div.innerHTML.replace(regex, match => `${match}${placeholder}`);
+            div.innerHTML = div.innerHTML.replace(placeholder, button.outerHTML);
+        }
+    } else if (type === 'm1') {
+        const master = div.querySelector('h2[class*="order-details-section-title"]');
+        if (master) master.appendChild(button);
+    } else if (type === 'b1' || type === 's1' || type === 's2') {
+        const storedData = await getStoredData();
+
+        if (storedData.autosubmit && storedData.minimalmode) {
+            button.style.visibility = 'hidden';
+        }
+
+        div.appendChild(button);
+
+        if (type === 's1') {
+            document.killNonces = {};
+            document.preventAutoSubmit = false;
+        }
+        if (type === 's2' && storedData.autosubmit && !document.preventAutoSubmit) {
+            doImageClickWork(button, type);
+        }
+    } else {
+        div.appendChild(button);
+    }
+}
+
+/**
+ * Main function to add a button to a div if needed.
+ *
+ * @param {HTMLElement} div - The div element to which the button may be added.
+ * @param {string} type - The type of button to add.
+ */
+async function addButtonToDivIfNeeded(div, type) {
+    if (shouldSkipAddingButton(div, type)) return;
+
+    if (!div.querySelector('.my-custom-button')) {
+        const button = document.createElement('img');
+        button.classList.add('my-custom-button');
+        button.src = imageUrl;
+        button.width = 16;
+        button.height = 16;
+        button.setAttribute('vType', type);
+
+        setButtonStyle(button, type);
+        await handleButtonPlacement(div, button, type);
+
+        div.querySelectorAll('img.my-custom-button').forEach(childDiv => {
+            childDiv.addEventListener('click', imageClickHandler);
+        });
+    }
+}
+
 
 // MutationObserver callback function
 // This is called whenever anything changes in the interface
@@ -981,7 +1128,7 @@ const mutationCallback = function (mutationsList, observer) {
                     // Additionally, check if there are matching child nodes in the added node
 
 
-                    node.querySelectorAll('div[data-column="order-number"][role="cell"]').forEach(childDiv => {
+                    node.querySelectorAll('div[class^="grid-page-"] div[data-column="order-number"][role="cell"]').forEach(childDiv => {
                         //get minimalmode from storage
                         chrome.storage.local.get({ minimalmode: true }, function (storedData) {
 
@@ -998,7 +1145,7 @@ const mutationCallback = function (mutationsList, observer) {
                             }
                         });
                     });
-                    node.querySelectorAll('div[data-column="item-sku"][role="cell"]').forEach(childDiv => {
+                    node.querySelectorAll('div[class^="grid-page-"] div[data-column="item-sku"][role="cell"]').forEach(childDiv => {
                         chrome.storage.local.get({ minimalmode: true }, function (storedData) {
 
                             // This was a useful debug step
@@ -1024,33 +1171,23 @@ const mutationCallback = function (mutationsList, observer) {
                     //     addButtonToDivIfNeeded(childDiv, 'p1');
                     // });           
 
-                    node.querySelectorAll('div[class^="item-sku-"]').forEach(childDiv => {
+                    node.querySelectorAll('div[class^="grid-page-"] div[class^="item-sku-"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 'p2');
                     });
-                    node.querySelectorAll('div[class*="shipment-items-section-header-labels"]').forEach(childDiv => {
+                    node.querySelectorAll('div[class*="order-details-drawer-"] div[class*="shipment-items-section-header-labels"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv.parentElement, 'm1');
                     });
-                    node.querySelectorAll('div[aria-labelledby="quantity"][role="cell"]').forEach(childDiv => {
+                    node.querySelectorAll('div[class*="order-details-drawer-"] div[aria-labelledby="quantity"][role="cell"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 'm2');
                     });
-                    node.querySelectorAll('div[class^="batch-title"]').forEach(childDiv => {
+                    node.querySelectorAll('div[class^="grid-page-"] div[class^="batch-title"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 'b1');
                     });
                     node.querySelectorAll('div[class^="scan-page-"] span[class^="info-"]').forEach(childSpan => {
-                        //if previous sibling is a span and it has a class that starts with 'label-'
-                        var sibling = childSpan.previousElementSibling;
-                        if (sibling && sibling.matches('span[class^="label-"]')) {
-                            //if if sibling's content is 'Order'
-                            if (sibling.innerText == 'Order') {
-                                addButtonToDivIfNeeded(childSpan, 's1');
-                            }
-                        }
+                        addButtonToDivIfNeeded(childSpan, 's1');
                     });
                     node.querySelectorAll('div[class^="scan-page-"] div[class^="item-list-"] div[class*="item-count-"]').forEach(childDiv => {
-                        //if it's not the verified count
-                        if ((!childDiv.matches('div[class*="verified-quantity-count-"]')) && (!childDiv.parentElement.matches('div[class*="verified-"]'))) {
-                            addButtonToDivIfNeeded(childDiv, 's2');
-                        }
+                        addButtonToDivIfNeeded(childDiv, 's2');
                     });
 
                     node.querySelectorAll('div[class^="scan-page-"] div[class^="item-list-"] div[class*="item-count-"]').forEach(childDiv => {

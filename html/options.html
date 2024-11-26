@@ -27,8 +27,8 @@
         <label for="id_name">Name:</label>
         <input type="text" name="name" maxlength="32" id="id_name">
         <small id="hint_id_name" class="form-text text-muted">Display your name on devices</small>
-        <small id="hint_id_name2" class="form-text text-muted"><br><br>Devices can display five lines total, chosen from Name, Instruction, SKU, Order, Shipment, Batch Label, UPC Barcode, and Arrow.</small>
-        <small id="hint_id_name3" class="form-text text-muted"><br>Keep text to a minimum to improve productivity.  UPC barcode and arrow count as one each!</small>
+        <small id="hint_id_name2" class="form-text text-muted"><br><br>Devices can display five lines total, chosen from Name, Instruction, SKU, Item Name, Order, Shipment, Batch Label, UPC Barcode or SKU Barcode, and Arrow.</small>
+        <small id="hint_id_name3" class="form-text text-muted"><br>Keep text to a minimum to improve readability and productivity.  A barcode or arrow count as one each!</small>
     </div>
 
     <div class="form-group">
@@ -70,9 +70,21 @@
     </div>
 
     <div class="form-group">
-        <label for="id_addupc">Add UPC Barcode:</label>
-        <input type="checkbox" name="addupc" id="id_addupc">
-        <small id="hint_id_addupc" class="form-text text-muted">Display UPC barcode on devices</small>
+        <label for="id_addproductname">Add Item Name:</label>
+        <input type="checkbox" name="addproductname" id="id_addproductname">
+        <small id="hint_id_addproductname" class="form-text text-muted">Display item name on devices</small>
+    </div>
+
+    <div class="form-group">
+        <label for="id_addupcbarcode">Add UPC Barcode:</label>
+        <input type="checkbox" name="addupcbarcode" id="id_addupcbarcode">
+        <small id="hint_id_addupcbarcode" class="form-text text-muted">Display UPC barcode on devices</small>
+    </div>
+
+    <div class="form-group">
+        <label for="id_addskubarcode">Add SKU Barcode:</label>
+        <input type="checkbox" name="addskubarcode" id="id_addskubarcode">
+        <small id="hint_id_addskubarcode" class="form-text text-muted">Display SKU barcode on devices</small>
     </div>
 
     <div class="form-group">

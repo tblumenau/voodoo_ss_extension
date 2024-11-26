@@ -6,12 +6,14 @@ function saveOptions() {
     const color = document.getElementById('id_color').value;
     const seconds = document.getElementById('id_seconds').value;
     const minimalmode = document.getElementById('id_minimal_mode').checked;
+    const addproductname = document.getElementById('id_addproductname').checked;
     const addorder = document.getElementById('id_addorder').checked;
-    const addupc = document.getElementById('id_addupc').checked;
+    const addupcbarcode = document.getElementById('id_addupcbarcode').checked;
+    const addskubarcode = document.getElementById('id_addskubarcode').checked;
     const addshipment = document.getElementById('id_addshipment').checked;
     const beep = document.getElementById('id_beep').checked;
     const autosubmit = document.getElementById('id_autosubmit').checked;
-    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addupc,addshipment,beep,autosubmit}, function() {
+    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addproductname, addskubarcode,addupcbarcode: addupcbarcode,addshipment,beep,autosubmit}, function() {
         console.log('Settings saved.');
         window.close(); // Close the options window
     });
@@ -25,11 +27,11 @@ function restoreOptions() {
         pickword: '',
         color: 'red', 
         seconds: 60, 
-        minimalmode: false,
+        minimalmode: true,
         addorder: false,
-        addupc: false,
+        addupcbarcode: true,
         addshipment: false,
-        beep: false,
+        beep: true,
         autosubmit: false
     }, function(storedData) {
         // Assign the retrieved values
@@ -40,7 +42,9 @@ function restoreOptions() {
         if (storedData.seconds) document.getElementById('id_seconds').value = storedData.seconds;
         if (storedData.minimalmode) document.getElementById('id_minimal_mode').checked = storedData.minimalmode;
         if (storedData.addorder) document.getElementById('id_addorder').checked = storedData.addorder;
-        if (storedData.addupc) document.getElementById('id_addupc').checked = storedData.addupc;
+        if (storedData.addproductname) document.getElementById('id_addproductname').checked = storedData.addproductname;
+        if (storedData.addskubarcode) document.getElementById('id_addskubarcode').checked = storedData.addskubarcode;
+        if (storedData.addupcbarcode) document.getElementById('id_addupcbarcode').checked = storedData.addupcbarcode;
         if (storedData.addshipment) document.getElementById('id_addshipment').checked = storedData.addshipment;
         if (storedData.beep) document.getElementById('id_beep').checked = storedData.beep;
         if (storedData.autosubmit) document.getElementById('id_autosubmit').checked = storedData.autosubmit;
