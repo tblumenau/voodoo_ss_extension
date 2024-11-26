@@ -43,6 +43,10 @@ function processQueue() {
 // and a message is not completed before another one is sent
 // Note that prcoessing (without login) messages can typically take a second or two to complete
 // Most of that time is because of ShipStation's slow API
+
+let doingAModal = false;
+
+
 async function processMessage(message) {
     let storedData = await new Promise((resolve) => {
         chrome.storage.local.get(['endpoint', 'name', 'color', 'seconds','apikey','addorder'], function(result) {
@@ -71,11 +75,18 @@ async function processMessage(message) {
         //Duh!
 
         // Show the login modal if needed
+        if (doingAModal) {
+            logFromBackground('Already doing a modal login dialog.  Ignoring request!');
+            return;
+        }
+        else {
+            doingAModal = true;
+        }
         doModalThenFetch(storedData.endpoint+'/user/login/',url,storedData.apikey,null);
+        doingAModal = false;
     }
 
 }
-
 
 async function processMessageWithArray(message) {
     let storedData = await new Promise((resolve) => {
@@ -84,7 +95,7 @@ async function processMessageWithArray(message) {
         });
     });
 
-    logFromBackground('Processing device activations: ' + JSON.stringify(message) );
+    logFromBackground('Processing device commands: ' + JSON.stringify(message) );
     url = storedData.endpoint+'/devices/';
 
     //IMPORTANT, IMPORTANT, IMPORTANT
@@ -95,7 +106,15 @@ async function processMessageWithArray(message) {
         //Duh!
 
         // Show the login modal if needed
+        if (doingAModal) {
+            logFromBackground('Already doing a modal login dialog.  Ignoring request!');
+            return;
+        }
+        else {
+            doingAModal = true;
+        }
         doModalThenFetch(storedData.endpoint+'/user/login/',url,storedData.apikey,message.array);
+        doingAModal = false;
     }
 
 }
@@ -144,6 +163,10 @@ async function fetchData(url, apikey, array) {
 
     try {
         const response = await fetch(url, options);
+        if (response.status === 404) {
+            logFromBackground(`Error: ${response.status} ${response.statusText} -- Ignored.`);
+            return true;
+        }
         if (!response.ok) {
             logFromBackground(`Error: ${response.status} ${response.statusText}`);
             return false;

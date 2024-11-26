@@ -3,25 +3,36 @@ function sanitizeText(text) {
     return text.replace(/&nbsp;/g, '').replace(/\s+/g, '').trim();
 }
 
+// Function to retrieve stored data from chrome.storage.local
 function getStoredData() {
+    // Create a new Promise to handle the asynchronous operation
     let storedData = new Promise((resolve) => {
-        chrome.storage.local.get(['endpoint', 'name', 'pickword', 'color', 'seconds', 'apikey', 'addorder', 'addupc', 'addshipment', 'beep', 'autosubmit','minimalmode'], function (result) {
-            // This was a useful debug step
-            // chrome.storage.sync was not working on firefox
-            // Below helped identify this problem
+        // Use chrome.storage.local.get to retrieve the specified keys
+        chrome.storage.local.get(['endpoint', 'name', 'pickword', 'color', 'seconds', 'apikey', 'addorder', 'addupc', 'addshipment', 'beep', 'autosubmit', 'minimalmode'], function (result) {
+            // Check for any errors during the retrieval
             if (chrome.runtime.lastError) {
+                // Log the error to the console for debugging purposes
                 console.error('Error retrieving settings:', chrome.runtime.lastError);
                 return; // Exit the callback if an error occurred
             }
 
+            // Resolve the Promise with the retrieved result
             resolve(result);
         });
     });
+
+    // Return the Promise
     return storedData;
 }
 
-
-
+/**
+ * Function to find the previous sibling element with a non-empty first child text content.
+ * This function starts from the given element and traverses its previous siblings
+ * until it finds a sibling whose first child's text content is not empty.
+ *
+ * @param {HTMLElement} startElement - The element to start the search from.
+ * @returns {HTMLElement|null} - The previous sibling element with non-empty first child text content, or null if none is found.
+ */
 function findPreviousSiblingWithNonEmptyFirstChildText(startElement) {
     // Start with the immediately preceding sibling of the given element
     let previousSibling = startElement.previousElementSibling;
@@ -47,7 +58,15 @@ function findPreviousSiblingWithNonEmptyFirstChildText(startElement) {
     return null;
 }
 
-
+/**
+ * Function to find the previous sibling element that matches a given selector.
+ * This function starts from the given element and traverses its previous siblings
+ * until it finds a sibling that matches the specified selector.
+ *
+ * @param {HTMLElement} element - The element to start the search from.
+ * @param {string} selector - The CSS selector to match against previous siblings.
+ * @returns {HTMLElement|null} - The previous sibling element that matches the selector, or null if none is found.
+ */
 function closestPreviousSibling(element, selector) {
     // Start with the immediate previous sibling
     let prevSibling = element.previousElementSibling;
@@ -64,6 +83,15 @@ function closestPreviousSibling(element, selector) {
     return null; // Return null if no matching sibling is found
 }
 
+/**
+ * Function to find the next sibling element that matches a given selector.
+ * This function starts from the given element and traverses its next siblings
+ * until it finds a sibling that matches the specified selector.
+ *
+ * @param {HTMLElement} element - The element to start the search from.
+ * @param {string} selector - The CSS selector to match against next siblings.
+ * @returns {HTMLElement|null} - The next sibling element that matches the selector, or null if none is found.
+ */
 function closestNextSibling(element, selector) {
     // Start with the immediate next sibling
     let nextSibling = element.nextElementSibling;
@@ -102,47 +130,343 @@ function hasAncestorWithClass(element, classPrefix) {
 
 
 
-
-
-
+/**
+ * Function to send a "kill" command to a device for a given SKU.
+ * This function checks if the SKU exists in the document's killNonces,
+ * sets a flag to prevent auto-submit, and sends a "kill" command to the device.
+ *
+ * @param {string} itemSku - The SKU of the item to send the "kill" command for.
+ */
 function killOnDeviceForSKU(itemSku) {
-
+    // Check if the itemSku exists in the document's killNonces
     if (itemSku in document.killNonces) {
+        // Set a flag to prevent auto-submit
         document.preventAutoSubmit = true;
 
         console.log('killing ' + itemSku);
+
+        // Retrieve the nonce for the itemSku
         let nonce = document.killNonces[itemSku];
+
+        // Create an array to hold the command data
         let array = [];
+
+        // Create an object to hold the command data
         let data = {};
         data['command'] = 'kill';
         data['location'] = itemSku;
         data['nonce'] = nonce;
+
+        // Add the command data object to the array
         array.push(data);
+
+        // Send a message to the background script with the "kill" command
         chrome.runtime.sendMessage({ action: "voodooDevices", array }, function (response) {
-            //for now, background.js only returns true in the done parameter
+            // For now, background.js only returns true in the done parameter
             if (response.done) {
-            }
-            else {
+                // Handle successful response (if needed)
+            } else {
+                // Handle unsuccessful response (if needed)
             }
         });
-        //remove nonce from killNonces
+
+        // Remove the nonce from killNonces
         delete document.killNonces[itemSku];
     }
 }
 
+/**
+ * Function to perform the "kill" operation for a given element.
+ * This function finds the relevant SKU for the element and sends a "kill" command to the device.
+ *
+ * @param {HTMLElement} element - The element to perform the "kill" operation on.
+ */
 function doKill(element) {
-
+    // Get the parent element of the given element
     let infoDiv = element.parentElement;
+
+    // Find the closest previous sibling that matches the specified selector
     infoDiv = closestPreviousSibling(infoDiv, 'div[class*="info-and-buttons-"]');
+
+    // Query all span elements with class starting with "sku-upc-"
     let skuLines = infoDiv.querySelectorAll('span[class^="sku-upc-"]');
+
+    // Get the first element from the NodeList
     let master = skuLines[0];
+
+    // Get the inner text of the first child element and extract the SKU
     itemSku = master.firstElementChild.innerText;
     itemSku = itemSku.replace('SKU:', '');
     itemSku = sanitizeText(itemSku);
 
+    // Send the "kill" command for the extracted SKU
     killOnDeviceForSKU(itemSku);
 }
 
+async function doImageClickWork(target, attribute) {
+    console.log('doing click for ' + attribute);
+
+    const parentDiv = target.parentElement;
+
+    let orderNumber = '';
+    let itemSku = '';
+    let quantity = '';
+    let extra = '';
+
+    const storedData = await getStoredData();
+
+    switch (attribute) {
+        case 'c1':
+            ({ orderNumber, itemSku, extra } = handleColumnC1(parentDiv, storedData));
+            break;
+        case 'c2':
+            ({ orderNumber, itemSku, extra } = handleColumnC2(parentDiv, storedData));
+            break;
+        case 'p2':
+            ({ orderNumber, itemSku, quantity, extra } = handlePanelP2(parentDiv, storedData));
+            break;
+        case 'm1':
+            ({ orderNumber, itemSku, extra } = handleMasterM1(parentDiv, storedData));
+            break;
+        case 'm2':
+            ({ orderNumber, itemSku, quantity, extra } = handleMasterM2(parentDiv, target, storedData));
+            break;
+        case 'b1':
+            ({ orderNumber, itemSku, extra } = handleBatchB1(parentDiv));
+            break;
+        case 's1':
+            handleScanS1(storedData);
+            return; // Prevents further execution
+        case 's2':
+            handleScanS2(target,storedData);
+            return; // Prevents further execution
+        default:
+            console.warn('Unknown attribute: ' + attribute);
+            return;
+    }
+
+    chrome.runtime.sendMessage({ action: "voodooCall", itemSku: itemSku, orderNumber: orderNumber, quantity: quantity, extra: extra }, function (response) {
+        // for now, background.js only returns true in the done parameter
+        if (response.done) {
+        }
+        else {
+        }
+    });
+}
+
+// Helper functions for specific attributes
+
+function handleColumnC1(parentDiv, storedData) {
+    const orderNumber = parentDiv.innerText;
+    const itemSku = 'all';
+    const extra = storedData.addorder ? orderNumber : '';
+    return { orderNumber, itemSku, extra };
+}
+
+function handleColumnC2(parentDiv, storedData) {
+    let itemSku = parentDiv.innerText;
+    let orderNumber = parentDiv.parentElement.firstChild.innerText;
+
+    if (itemSku.includes('Item')) itemSku = 'all';
+    if (!orderNumber) {
+        const result = findPreviousSiblingWithNonEmptyFirstChildText(parentDiv.parentElement);
+        orderNumber = result.firstChild.innerText;
+    }
+
+    const extra = storedData.addorder ? orderNumber : '';
+    return { orderNumber, itemSku, extra };
+}
+
+function handlePanelP2(parentDiv, storedData) {
+    let itemSku = sanitizeText(parentDiv.innerText.replace('SKU:', ''));
+    const displayWrapper = parentDiv.closest('div[class*="item-display-wrapper"]');
+    let quantity = sanitizeText(
+        closestNextSibling(displayWrapper, 'div[class*="quantity-column"]').innerText
+    );
+
+    let orderNumber = sanitizeText(
+        closestPreviousSibling(displayWrapper, 'div[class*="item-list-title"]').innerText.replace('Items from Order #', '')
+    );
+    if (orderNumber === 'Items' || orderNumber === '') {
+        const master = parentDiv.closest('div[class^="side-bar"]');
+        orderNumber = master.firstChild.firstChild.firstChild.innerText;
+    }
+
+    const extra = storedData.addorder ? orderNumber : '';
+    return { orderNumber, itemSku, quantity, extra };
+}
+
+function handleMasterM1(parentDiv, storedData) {
+    const master = parentDiv.closest('div[class^="drawer"]').querySelector('div[class*="order-info-order-number"]');
+    const orderNumber = master.innerText.replace('Order # ', '');
+    const itemSku = 'all';
+    const extra = storedData.addorder ? orderNumber : '';
+    return { orderNumber, itemSku, extra };
+}
+
+function handleMasterM2(parentDiv, target, storedData) {
+    // Get the item SKU
+    const skuElement = parentDiv.parentElement.querySelector('div[class*="item-sku-with-order-number"]');
+    let itemSku = skuElement.innerText.replace('SKU:', '');
+    itemSku = sanitizeText(itemSku);
+
+    // Get the quantity
+    let quantity = sanitizeText(target.previousElementSibling.innerText);
+
+    // Get the order number
+    const drawerElement = parentDiv.closest('div[class^="drawer"]');
+    const orderInfoElement = drawerElement.querySelector('div[class*="order-info-order-number"]');
+    let orderNumber = sanitizeText(orderInfoElement.innerText.replace('Order #', ''));
+
+    // Determine extra based on stored data
+    const extra = storedData.addorder ? orderNumber : '';
+
+    return { orderNumber, itemSku, quantity, extra };
+}
+
+function handleBatchB1(parentDiv) {
+    const orders = [];
+    const children = document.querySelectorAll('div[data-column^="order-number"]');
+
+    // Collect order numbers from buttons inside child elements
+    children.forEach(childDiv => {
+        const button = childDiv.querySelector('button');
+        if (button) {
+            orders.push(button.innerText);
+        }
+    });
+
+    // Combine all orders into a single string
+    const orderNumber = orders.join(',');
+    const itemSku = 'all';
+
+    // Extract the batch name from the button inside parentDiv
+    const extraButton = parentDiv.querySelector('button');
+    const extra = extraButton ? extraButton.innerText : '';
+
+    return { orderNumber, itemSku, extra };
+}
+
+function handleScanS1(storedData) {
+    const infoChildren = document.querySelector('div[class^="scan-page-"] div[class^="body-header-"]').children;
+
+    const orderNumber = infoChildren[3].innerText;
+    const shipmentNumber = infoChildren[1].innerText;
+
+    const array = [];
+    const children = document.querySelectorAll('div[class^="item-list-container-"] div[class*="info-and-buttons-"]');
+
+    children.forEach(childDiv => {
+
+        // Extract SKU and sanitize
+        const skuLines = childDiv.querySelectorAll('span[class^="sku-upc-"]');
+
+        const itemSku = sanitizeText(skuLines[0].firstElementChild.innerText.replace('SKU:', ''));
+        const itemUPC = sanitizeText(skuLines[1].innerText.replace('UPC:', ''));
+
+        // Send kill command for the extracted SKU
+        killOnDeviceForSKU(itemSku);
+
+        // Extract and sanitize quantity
+        const quantityElement = closestNextSibling(childDiv, 'div[class*="counts-"]');
+        const quantity = sanitizeText(quantityElement.firstChild.innerText);
+
+
+        const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber);
+
+        if (data) {
+            array.push(data);
+        }
+    });
+
+    chrome.runtime.sendMessage({ action: "voodooDevices", array }, (response) => {
+        if (response.done) {
+            console.log('Device commands sent successfully');
+        } else {
+            console.error('Failed to send device commands');
+        }
+    });
+}
+
+
+
+// Helper function to create command data
+function createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber) {
+    
+    // Generate the command data object
+    const data = {
+        command: 'flash',
+        location: itemSku,
+        color: storedData.color,
+        seconds: storedData.seconds,
+        quantity: quantity,
+        nonce: generateKillNonce(storedData, orderNumber, shipmentNumber, itemSku, quantity)
+    };
+
+    let lineCount = 1;
+    if (storedData.name) data['line' + lineCount++] = storedData.name;
+    if (storedData.pickword) data['line' + lineCount++] = storedData.pickword;
+    data['line' + lineCount++] = itemSku;
+    if (storedData.addupc && itemUPC) data['barcode'] = itemUPC;
+    if (storedData.addorder) data['line' + lineCount++] = orderNumber;
+    if (storedData.addshipment) data['line' + lineCount++] = shipmentNumber;
+    if (storedData.beep) data['sound'] = '15,c5,4';
+
+    // Store nonce in the document's killNonces object
+    document.killNonces[itemSku] = data.nonce;
+
+    return data;
+}
+
+// Helper function to generate a unique nonce
+function generateKillNonce(storedData, orderNumber, shipmentNumber, itemSku, quantity) {
+    const randomString = () =>
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+
+    return `${storedData.name}-${orderNumber}-${shipmentNumber}-${itemSku}-qty:${quantity}-${randomString()}`;
+}
+
+
+function handleScanS2(target,storedData) {
+
+    let infoChildren = document.querySelector('div[class^="scan-page-"] div[class^="body-header-"]').children;
+
+    let orderNumber = infoChildren[3].innerText;
+    let shipmentNumber = infoChildren[1].innerText;
+
+    let infoDiv = target.parentElement.parentElement;
+    infoDiv = closestPreviousSibling(infoDiv, 'div[class*="info-and-buttons-"]');
+
+
+    // Extract SKU and sanitize
+    const skuLines = infoDiv.querySelectorAll('span[class^="sku-upc-"]');
+
+    const itemSku = sanitizeText(skuLines[0].firstElementChild.innerText.replace('SKU:', ''));
+    const itemUPC = sanitizeText(skuLines[1].innerText.replace('UPC:', ''));
+
+    // Send kill command for the extracted SKU
+    killOnDeviceForSKU(itemSku);
+
+    // Extract and sanitize quantity
+    const quantityElement = closestNextSibling(infoDiv, 'div[class*="counts-"]');
+
+    const quantity = sanitizeText(quantityElement.firstChild.innerText);
+
+    // Generate command data
+    const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber);
+
+    // Send the command to background.js
+    chrome.runtime.sendMessage({ action: "voodooDevices", array: [data] }, (response) => {
+        if (response.done) {
+            console.log('Device command sent successfully');
+        } else {
+            console.error('Failed to send device command');
+        }
+    });
+}
+
+/*
 
 async function doImageClickWork(target, attribute) {
     console.log('doing click for ' + attribute);
@@ -290,30 +614,37 @@ async function doImageClickWork(target, attribute) {
         let children = document.querySelectorAll('div[class^="item-list-container-"] div[class*="info-and-buttons-"]');
         children.forEach(childDiv => {
 
-            //get first child of childDiv that has a class that starts with 'label-'
+            // Query all span elements with class starting with "sku-upc-"
             let skuLines = childDiv.querySelectorAll('span[class^="sku-upc-"]');
+
+            // Get the first element from the NodeList and extract the SKU
             let master = skuLines[0];
             let itemSku = master.firstElementChild.innerText;
             itemSku = itemSku.replace('SKU:', '');
             itemSku = sanitizeText(itemSku);
 
+            // Get the second element from the NodeList and extract the UPC
             master = skuLines[1];
             let itemUPC = master.innerText;
             itemUPC = itemUPC.replace('UPC:', '');
             itemUPC = sanitizeText(itemUPC);
 
+            // Send the "kill" command for the extracted SKU just in case there is already one pending
             killOnDeviceForSKU(itemSku);
 
-            //find the next sibling that has a class that starts with 'counts-'
+            // Find the quantity from the closest next sibling with class containing "counts-"
             let quantity = closestNextSibling(childDiv, 'div[class*="counts-"]').firstChild.innerText;
+
+            // Create an object to hold the command data
             let data = {};
             let lineCount = 1;
             data['command'] = 'flash';
             data['location'] = itemSku;
             data['color'] = storedData.color;
             data['seconds'] = storedData.seconds;
-
             data['quantity'] = quantity;
+
+            // Add additional lines to the command data based on stored settings
             if (storedData.name) {
                 data['line' + lineCount++] = storedData.name;
             }
@@ -334,14 +665,17 @@ async function doImageClickWork(target, attribute) {
                 data['sound'] = '15,c5,4';
             }
 
-            //if we get here, we need to add the killnonce
+            // Generate a unique nonce for the kill command
             let killNonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             killNonce = storedData.name + '-' + orderNumber + '-' + shipmentNumber + '-' + itemSku + '-qty:' + quantity + '-' + killNonce;
 
+            // Add the nonce to the command data
             data['nonce'] = killNonce;
 
+            // Store the nonce in the document's killNonces object
             document.killNonces[itemSku] = killNonce;
 
+            // Add the command data to the array
             array.push(data);
 
         });
@@ -374,36 +708,38 @@ async function doImageClickWork(target, attribute) {
 
         let infoDiv = parentDiv.parentElement;
         infoDiv = closestPreviousSibling(infoDiv, 'div[class*="info-and-buttons-"]');
-        let skuLines = infoDiv.querySelectorAll('span[class^="sku-upc-"]');
+
+        // Query all span elements with class starting with "sku-upc-"
+        let skuLines = childDiv.querySelectorAll('span[class^="sku-upc-"]');
+
+        // Get the first element from the NodeList and extract the SKU
         let master = skuLines[0];
         let itemSku = master.firstElementChild.innerText;
         itemSku = itemSku.replace('SKU:', '');
         itemSku = sanitizeText(itemSku);
 
+        // Get the second element from the NodeList and extract the UPC
         master = skuLines[1];
         let itemUPC = master.innerText;
         itemUPC = itemUPC.replace('UPC:', '');
         itemUPC = sanitizeText(itemUPC);
 
+        // Send the "kill" command for the extracted SKU just in case there is already one pending
         killOnDeviceForSKU(itemSku);
 
-        //find the next sibling that has a class that starts with 'counts-'
-        let quantity = closestNextSibling(infoDiv, 'div[class*="counts-"]').firstChild.innerText;
-        let array = [];
+        // Find the quantity from the closest next sibling with class containing "counts-"
+        let quantity = closestNextSibling(childDiv, 'div[class*="counts-"]').firstChild.innerText;
+
+        // Create an object to hold the command data
         let data = {};
         let lineCount = 1;
         data['command'] = 'flash';
         data['location'] = itemSku;
-
-        data['quantity'] = quantity;
-
-
-        let storedData = await getStoredData();
-
         data['color'] = storedData.color;
         data['seconds'] = storedData.seconds;
+        data['quantity'] = quantity;
 
-
+        // Add additional lines to the command data based on stored settings
         if (storedData.name) {
             data['line' + lineCount++] = storedData.name;
         }
@@ -424,17 +760,18 @@ async function doImageClickWork(target, attribute) {
             data['sound'] = '15,c5,4';
         }
 
-        //if we get here, we need to add the killnonce
+        // Generate a unique nonce for the kill command
         let killNonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         killNonce = storedData.name + '-' + orderNumber + '-' + shipmentNumber + '-' + itemSku + '-qty:' + quantity + '-' + killNonce;
 
+        // Add the nonce to the command data
         data['nonce'] = killNonce;
 
+        // Store the nonce in the document's killNonces object
         document.killNonces[itemSku] = killNonce;
 
+        // Add the command data to the array
         array.push(data);
-
-
 
 
 
@@ -464,31 +801,46 @@ async function doImageClickWork(target, attribute) {
         }
     });
 }
+*/
 
 
-
+/**
+ * Function to handle the click event on an image.
+ * This function prevents the default behavior, stops the event from propagating,
+ * and performs additional work based on the clicked image.
+ *
+ * @param {Event} event - The click event object.
+ */
 function imageClickHandler(event) {
     // Handle the click event
     // console.log('Button clicked:', event.target);
 
+    // Set a flag to prevent auto-submit
     document.preventAutoSubmit = true;
 
+    // Stop the event from propagating further
     event.stopImmediatePropagation();
+
+    // Prevent the default action associated with the event
     event.preventDefault();
 
+    // Perform additional work based on the clicked image
     doImageClickWork(event.target, event.target.getAttribute('vType'));
-
 }
 
 
 
-
-// Function to add a button to a div if it doesn't already have one
-
 //make this a global load so that it doesn't neet to be repeatedly loaded
 const imageUrl = chrome.runtime.getURL('icons/icon16.png');
 
-
+/**
+ * Function to add a button to a div if needed.
+ * This function checks if a button of a specific type already exists in the div.
+ * If not, it creates and adds the button to the div.
+ *
+ * @param {HTMLElement} div - The div element to which the button may be added.
+ * @param {string} type - The type of button to add (used to identify the button).
+ */
 async function addButtonToDivIfNeeded(div, type) {
 
 
@@ -524,7 +876,9 @@ async function addButtonToDivIfNeeded(div, type) {
         else if (type == 'm2') {
             button.style.cssText = 'float: right; margin-bottom: 8px; margin-left: 10px; border: none; background: none;';
         }
-
+        else if (type == 'c1') {
+            button.style.cssText = 'float: right; margin-top: -16px; border: none; background: none;';
+        }
         // const img = document.createElement('img');
         // above moved to global
 
