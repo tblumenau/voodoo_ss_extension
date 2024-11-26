@@ -9,8 +9,9 @@ function saveOptions() {
     const addorder = document.getElementById('id_addorder').checked;
     const addupc = document.getElementById('id_addupc').checked;
     const addshipment = document.getElementById('id_addshipment').checked;
+    const beep = document.getElementById('id_beep').checked;
     const autosubmit = document.getElementById('id_autosubmit').checked;
-    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addupc,addshipment,autosubmit}, function() {
+    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addupc,addshipment,beep,autosubmit}, function() {
         console.log('Settings saved.');
         window.close(); // Close the options window
     });
@@ -28,6 +29,7 @@ function restoreOptions() {
         addorder: false,
         addupc: false,
         addshipment: false,
+        beep: false,
         autosubmit: false
     }, function(storedData) {
         // Assign the retrieved values
@@ -40,6 +42,7 @@ function restoreOptions() {
         if (storedData.addorder) document.getElementById('id_addorder').checked = storedData.addorder;
         if (storedData.addupc) document.getElementById('id_addupc').checked = storedData.addupc;
         if (storedData.addshipment) document.getElementById('id_addshipment').checked = storedData.addshipment;
+        if (storedData.beep) document.getElementById('id_beep').checked = storedData.beep;
         if (storedData.autosubmit) document.getElementById('id_autosubmit').checked = storedData.autosubmit;
     });
 }

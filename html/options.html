@@ -27,7 +27,7 @@
         <label for="id_name">Name:</label>
         <input type="text" name="name" maxlength="32" id="id_name">
         <small id="hint_id_name" class="form-text text-muted">Display your name on devices</small>
-        <small id="hint_id_name2" class="form-text text-muted"><br><br>Devices can display five lines total, chosen from Name, Instruction, SKU, Order, Shipment, Batch Label, UPC, and Arrow.</small>
+        <small id="hint_id_name2" class="form-text text-muted"><br><br>Devices can display five lines total, chosen from Name, Instruction, SKU, Order, Shipment, Batch Label, UPC Barcode, and Arrow.</small>
         <small id="hint_id_name3" class="form-text text-muted"><br>Keep text to a minimum to improve productivity.  UPC barcode and arrow count as one each!</small>
     </div>
 
@@ -57,9 +57,9 @@
     </div>
 
     <div class="form-group">
-        <label for="id_pickword">Add Pick Word:</label>
+        <label for="id_pickword">Instruction:</label>
         <input type="text" name="pickword" maxlength="32" id="id_pickword">
-        <small id="hint_id_pickword" class="form-text text-muted">Instruction displayed on the device (leave blank or 'Pick' or 'Take' or 'Toma')</small>
+        <small id="hint_id_pickword" class="form-text text-muted">Picking word displayed on the device (leave blank or 'Pick' or 'Take' or 'Toma')</small>
     </div>
 
 
@@ -79,6 +79,12 @@
         <label for="id_addshipment">Add Shipment:</label>
         <input type="checkbox" name="addshipment" id="id_addshipment">
         <small id="hint_id_addshipment" class="form-text text-muted">Display shipment number on devices</small>
+    </div>
+
+    <div class="form-group">
+        <label for="id_beep">Beep:</label>
+        <input type="checkbox" name="beep" id="id_beep">
+        <small id="hint_id_beep" class="form-text text-muted">Beep device when activating</small>
     </div>
 
     <div class="form-group">
