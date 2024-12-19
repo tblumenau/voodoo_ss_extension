@@ -13,7 +13,7 @@ function saveOptions() {
     const addshipment = document.getElementById('id_addshipment').checked;
     const beep = document.getElementById('id_beep').checked;
     const autosubmit = document.getElementById('id_autosubmit').checked;
-    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addproductname, addskubarcode,addupcbarcode: addupcbarcode,addshipment,beep,autosubmit}, function() {
+    chrome.storage.local.set({endpoint,name,pickword,color,seconds,minimalmode,addorder,addproductname, addskubarcode,addupcbarcode,addshipment,beep,autosubmit}, function() {
         console.log('Settings saved.');
         window.close(); // Close the options window
     });
@@ -29,7 +29,9 @@ function restoreOptions() {
         seconds: 60, 
         minimalmode: true,
         addorder: false,
-        addupcbarcode: true,
+        addproductname: true,
+        addupcbarcode: false,
+        addskubarcode: false,
         addshipment: false,
         beep: true,
         autosubmit: false

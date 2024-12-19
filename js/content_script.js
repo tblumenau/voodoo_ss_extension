@@ -8,7 +8,7 @@ function getStoredData() {
     // Create a new Promise to handle the asynchronous operation
     let storedData = new Promise((resolve) => {
         // Use chrome.storage.local.get to retrieve the specified keys
-        chrome.storage.local.get(['endpoint', 'name', 'pickword', 'color', 'seconds', 'apikey', 'addorder', 'addupcbarcode', 'addshipment', 'beep', 'autosubmit', 'minimalmode'], function (result) {
+        chrome.storage.local.get(['endpoint', 'name', 'pickword', 'color', 'seconds', 'apikey', 'addproductname', 'addorder', 'addskubarcode','addupcbarcode', 'addshipment', 'beep', 'autosubmit', 'minimalmode'], function (result) {
             // Check for any errors during the retrieval
             if (chrome.runtime.lastError) {
                 // Log the error to the console for debugging purposes
