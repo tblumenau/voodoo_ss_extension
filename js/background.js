@@ -247,7 +247,7 @@ async function doModalThenFetch(loginUrl,furl,apikey,array) {
         url: modalUrl,
         type: "popup", // This makes it a popup window
         width: 400,
-        height: 300
+        height: 380
     };
 
     chrome.windows.create(windowOptions);

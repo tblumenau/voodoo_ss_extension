@@ -19,6 +19,20 @@ function saveOptions() {
     });
 }
 
+function renderExtensionInfo() {
+    const manifest = chrome.runtime.getManifest();
+    const extensionName = document.getElementById('extension-name');
+    const extensionVersion = document.getElementById('extension-version');
+
+    if (extensionName) {
+        extensionName.textContent = manifest.name || 'Voodoo ShipStation Extension';
+    }
+
+    if (extensionVersion) {
+        extensionVersion.textContent = manifest.version ? `Version ${manifest.version}` : '';
+    }
+}
+
 function restoreOptions() {
     // Request all keys at once
     chrome.storage.local.get({
@@ -54,6 +68,7 @@ function restoreOptions() {
 }
 
 
+document.addEventListener('DOMContentLoaded', renderExtensionInfo);
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('save').addEventListener('click', saveOptions);
 

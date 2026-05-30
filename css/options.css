@@ -1,80 +1,404 @@
+:root {
+    --bg-top: #f8f2e6;
+    --bg-bottom: #edf3f5;
+    --card: rgba(255, 255, 255, 0.9);
+    --card-strong: rgba(255, 255, 255, 0.96);
+    --ink: #20303a;
+    --muted: #5d6e78;
+    --brand: #2a5b7c;
+    --brand-deep: #173f59;
+    --line: #d6e0e4;
+    --shadow: 0 18px 48px rgba(28, 44, 56, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    background-color: #f4f4f4;
-    text-align: center; /* Centers the content, including the logo and the form */
+    margin: 0;
+    min-height: 100vh;
+    padding: 32px 18px 40px;
+    background:
+        radial-gradient(circle at top left, rgba(156, 185, 210, 0.35), transparent 28%),
+        radial-gradient(circle at top right, rgba(233, 214, 177, 0.35), transparent 24%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--ink);
+    font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+}
+
+a {
+    color: var(--brand);
+}
+
+a:hover {
+    color: var(--brand-deep);
+}
+
+.page-shell {
+    max-width: 1380px;
+    margin: 0 auto;
+}
+
+.hero-card {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 28px;
+    align-items: center;
+    padding: 28px 30px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(23, 63, 89, 0.08);
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(236, 243, 247, 0.92));
+    box-shadow: var(--shadow);
+}
+
+.logo-link {
+    display: grid;
+    place-items: center;
+    width: 160px;
+    height: 160px;
+    background: none;
+    border: none;
 }
 
 .logo {
-    width: 128px; /* Adjust based on your logo's dimensions */
-    height: auto; /* Keeps the logo's aspect ratio intact */
-    margin-bottom: 20px; /* Adds some space between the logo and the heading */
+    width: 112px;
+    height: auto;
+    display: block;
+    filter: none;
 }
 
-h1 {
-    color: #333;
-    margin-bottom: 40px; /* Ensures consistent spacing between elements */
+.hero-content {
+    text-align: left;
+}
+
+.hero-kicker {
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brand-deep);
+}
+
+.extension-name {
+    font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.05;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.hero-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.extension-version {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(42, 91, 124, 0.12);
+    color: var(--brand-deep);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.extension-name:empty,
+.extension-version:empty {
+    display: none;
+}
+
+.contact-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(42, 91, 124, 0.14);
+    background: var(--card-strong);
+    box-shadow: 0 10px 24px rgba(28, 44, 56, 0.06);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.hero-description {
+    margin: 14px 0 0;
+    max-width: 720px;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.settings-layout {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 22px;
+}
+
+.settings-panel,
+.log-panel {
+    border: 1px solid rgba(23, 63, 89, 0.08);
+    border-radius: 24px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+
+.settings-panel {
+    grid-column: span 6;
+    padding: 22px 24px 24px;
+    text-align: left;
+}
+
+.settings-panel-wide {
+    grid-column: 1 / -1;
+}
+
+.panel-heading {
+    margin-bottom: 18px;
+}
+
+.panel-kicker {
+    margin: 0 0 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand);
+}
+
+.panel-heading h2 {
+    margin: 0;
+    font-family: "Gill Sans", "Trebuchet MS", sans-serif;
+    font-size: 1.45rem;
+    color: var(--ink);
+}
+
+.field-stack {
+    display: grid;
+    gap: 16px;
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
 }
 
 .form-group {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,.1);
-    padding: 20px;
-    margin: 20px auto;
-    max-width: 500px; /* Controls the width of the form groups */
-    text-align: left; /* Aligns the form elements to the left */
+    margin: 0;
 }
 
 label {
     display: block;
-    margin-bottom: 10px;
-    color: #333;
+    margin-bottom: 8px;
+    color: var(--ink);
+    font-weight: 700;
 }
 
 input[type="text"],
 input[type="number"],
-select,
-.form-check-input {
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
+select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px rgba(42, 91, 124, 0.12);
+}
+
+small {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.toggle-stack,
+.toggle-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.toggle-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.toggle-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: start;
+    padding: 16px 18px;
+    border: 1px solid rgba(42, 91, 124, 0.14);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff, #f8fbfc);
+}
+
+.toggle-copy label {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.toggle-copy small {
+    margin-top: 6px;
+}
+
+.toggle-card input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-top: 4px;
+    accent-color: var(--brand);
+}
+
+.panel-note {
+    margin: 16px 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 0 20px;
+}
+
+#logout-button-container {
+    display: flex;
 }
 
 .btn-info {
-    background-color: #0056b3;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+    color: #fff;
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     cursor: pointer;
-    font-size: 16px;
-    display: block;
-    width: auto;
-    max-width: 200px; /* Gives the button a manageable width */
-    margin: 20px auto; /* Centers the button below the form */
+    box-shadow: 0 12px 24px rgba(23, 63, 89, 0.18);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .btn-info:hover {
-    background-color: #004494;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(23, 63, 89, 0.22);
+}
+
+#logout-button-container .btn-info {
+    background: var(--card-strong);
+    color: var(--brand-deep);
+    border-color: rgba(42, 91, 124, 0.16);
+    box-shadow: none;
 }
 
 .asteriskField {
-    color: red;
+    color: #c23b22;
 }
+
+.log-panel {
+    padding: 22px;
+}
+
+.log-heading {
+    margin-bottom: 14px;
+}
+
 .console-log {
-    margin: 20px auto;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
-    height: 800px;
+    width: 100%;
+    margin: 0;
+    padding: 16px;
+    height: clamp(360px, 46vh, 820px);
     overflow-y: auto;
-    padding: 5px;
-    font-family: monospace;
-    font-size: 1.5em;
-    color: #333;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #f8fafb;
+    color: #293943;
     text-align: left;
-    max-width: 1300px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 920px) {
+    .hero-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .logo-link {
+        margin: 0 auto;
+    }
+
+    .hero-content {
+        text-align: center;
+    }
+
+    .hero-meta-row {
+        justify-content: center;
+    }
+
+    .hero-description {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .settings-panel {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 20px 12px 28px;
+    }
+
+    .hero-card,
+    .settings-panel,
+    .log-panel {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .logo-link {
+        width: 132px;
+        height: 132px;
+        border-radius: 22px;
+    }
+
+    .logo {
+        width: 92px;
+    }
+
+    .field-row,
+    .toggle-grid {
+        grid-template-columns: 1fr;
+    }
 }

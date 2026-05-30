@@ -8,106 +8,174 @@
 </head>
 
 <body>
-    <a href="https://www.voodoorobotics.com/" target="_blank">
-        <img src="../icons/icon128.png" alt="Voodoo Robotics Logo" class="logo">
-    </a>
-    <div>
-        <a href="https://www.voodoorobotics.com/contact/" target="_blank">
-            Contact Us</a>&nbspto order <br>devices for your warehouse
-    </div>
+    <main class="page-shell">
+        <header class="hero-card">
+            <a href="https://www.voodoorobotics.com/" target="_blank" class="logo-link">
+                <img src="../icons/icon128.png" alt="Voodoo Robotics Logo" class="logo">
+            </a>
+            <div class="hero-content">
+                <div id="extension-name" class="extension-name"></div>
+                <div class="hero-meta-row">
+                    <div id="extension-version" class="extension-version"></div>
+                    <a href="https://www.voodoorobotics.com/contact/" target="_blank" class="contact-pill">Contact us to order devices</a>
+                </div>
+                <p class="hero-description">Configure how the extension connects to your devices, what each light displays, and which actions should happen automatically inside ShipStation.</p>
+            </div>
+        </header>
 
-    <h1>Voodoo Robotics Settings</h1>
-    <div class="form-group">
-        <label for="id_endpoint">Endpoint URL:</label>
-        <input type="text" name="endpoint" id="id_endpoint" placeholder="https://www.voodoodevices.com/api">
-        <small id="hint_id_endpoint" class="form-text text-muted">Enter the API endpoint URL (e.g., https://www.voodoodevices.com/api)</small>
-    </div>
+        <section class="settings-layout">
+            <section class="settings-panel settings-panel-wide">
+                <div class="panel-heading">
+                    <p class="panel-kicker">Connection</p>
+                    <h2>Endpoint</h2>
+                </div>
+                <div class="form-group">
+                    <label for="id_endpoint">Endpoint URL</label>
+                    <input type="text" name="endpoint" id="id_endpoint" placeholder="https://www.voodoodevices.com/api">
+                    <small id="hint_id_endpoint" class="form-text text-muted">Enter the API endpoint URL, for example https://www.voodoodevices.com/api</small>
+                </div>
+            </section>
 
-    <div class="form-group">
-        <label for="id_name">Name:</label>
-        <input type="text" name="name" maxlength="32" id="id_name">
-        <small id="hint_id_name" class="form-text text-muted">Display your name on devices</small>
-        <small id="hint_id_name2" class="form-text text-muted"><br><br>Devices can display five lines total, chosen from Name, Instruction, SKU, Item Name, Order, Shipment, Batch Label, UPC Barcode or SKU Barcode, and Arrow.</small>
-        <small id="hint_id_name3" class="form-text text-muted"><br>Keep text to a minimum to improve readability and productivity.  A barcode or arrow count as one each!</small>
-    </div>
+            <section class="settings-panel">
+                <div class="panel-heading">
+                    <p class="panel-kicker">Identity</p>
+                    <h2>Device text</h2>
+                </div>
+                <div class="field-stack">
+                    <div class="form-group">
+                        <label for="id_name">Name</label>
+                        <input type="text" name="name" maxlength="32" id="id_name">
+                        <small id="hint_id_name" class="form-text text-muted">Display your name on devices</small>
+                    </div>
 
-    <div class="form-group">
-        <label for="id_color">Color <span class="asteriskField">*</span></label>
-        <select name="color" id="id_color">
-            <option value="red">red</option>
-            <option value="green">green</option>
-            <option value="blue">blue</option>
-            <option value="cyan">cyan</option>
-            <option value="magenta">magenta</option>
-            <option value="yellow">yellow</option>
-        </select>
-        <small id="hint_id_color" class="form-text text-muted">Choose a color for the light</small>
-    </div>
+                    <div class="form-group">
+                        <label for="id_pickword">Instruction</label>
+                        <input type="text" name="pickword" maxlength="32" id="id_pickword">
+                        <small id="hint_id_pickword" class="form-text text-muted">Picking word displayed on the device. Leave blank or use Pick, Take, or Toma.</small>
+                    </div>
+                </div>
 
-    <div class="form-group">
-        <label for="id_seconds">Seconds <span class="asteriskField">*</span></label>
-        <input type="number" name="seconds" value="60" id="id_seconds" required>
-        <small id="hint_id_seconds" class="form-text text-muted">Maximum time allowed to push the button</small>
-    </div>
+                <p class="panel-note">Devices can display five lines total, chosen from Name, Instruction, SKU, Item Name, Order, Shipment, Batch Label, UPC Barcode or SKU Barcode, and Arrow.</p>
+                <p class="panel-note">Keep text to a minimum to improve readability and productivity. A barcode or arrow counts as one line.</p>
+            </section>
 
-    <div class="form-group">
-        <label for="id_minimal_mode">Minimal Mode:</label>
-        <input type="checkbox" name="minimal_mode" id="id_minimal_mode">
-        <small id="hint_id_minimal_mode" class="form-text text-muted">Hide extra icons in the ShipStation GUI</small>
-    </div>
+            <section class="settings-panel">
+                <div class="panel-heading">
+                    <p class="panel-kicker">Behavior</p>
+                    <h2>Light behavior</h2>
+                </div>
 
-    <div class="form-group">
-        <label for="id_pickword">Instruction:</label>
-        <input type="text" name="pickword" maxlength="32" id="id_pickword">
-        <small id="hint_id_pickword" class="form-text text-muted">Picking word displayed on the device (leave blank or 'Pick' or 'Take' or 'Toma')</small>
-    </div>
+                <div class="field-row">
+                    <div class="form-group">
+                        <label for="id_color">Color <span class="asteriskField">*</span></label>
+                        <select name="color" id="id_color">
+                            <option value="red">red</option>
+                            <option value="green">green</option>
+                            <option value="blue">blue</option>
+                            <option value="cyan">cyan</option>
+                            <option value="magenta">magenta</option>
+                            <option value="yellow">yellow</option>
+                        </select>
+                        <small id="hint_id_color" class="form-text text-muted">Choose a light color</small>
+                    </div>
 
+                    <div class="form-group">
+                        <label for="id_seconds">Seconds <span class="asteriskField">*</span></label>
+                        <input type="number" name="seconds" value="60" id="id_seconds" required>
+                        <small id="hint_id_seconds" class="form-text text-muted">Maximum time allowed to push the button</small>
+                    </div>
+                </div>
 
-    <div class="form-group">
-        <label for="id_addorder">Add Order Number:</label>
-        <input type="checkbox" name="addorder" id="id_addorder">
-        <small id="hint_id_addorder" class="form-text text-muted">Display order number on devices</small>
-    </div>
+                <div class="toggle-stack">
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_minimal_mode">Minimal Mode</label>
+                            <small id="hint_id_minimal_mode" class="form-text text-muted">Hide extra icons in the ShipStation GUI</small>
+                        </div>
+                        <input type="checkbox" name="minimal_mode" id="id_minimal_mode">
+                    </div>
 
-    <div class="form-group">
-        <label for="id_addproductname">Add Item Name:</label>
-        <input type="checkbox" name="addproductname" id="id_addproductname">
-        <small id="hint_id_addproductname" class="form-text text-muted">Display item name on devices</small>
-    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_beep">Beep</label>
+                            <small id="hint_id_beep" class="form-text text-muted">Beep the device when activating</small>
+                        </div>
+                        <input type="checkbox" name="beep" id="id_beep">
+                    </div>
 
-    <div class="form-group">
-        <label for="id_addupcbarcode">Add UPC Barcode:</label>
-        <input type="checkbox" name="addupcbarcode" id="id_addupcbarcode">
-        <small id="hint_id_addupcbarcode" class="form-text text-muted">Display UPC barcode on devices</small>
-    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_autosubmit">Auto Submit</label>
+                            <small id="hint_id_autosubmit" class="form-text text-muted">Light devices automatically for any order or shipment scanned</small>
+                        </div>
+                        <input type="checkbox" name="autosubmit" id="id_autosubmit">
+                    </div>
+                </div>
+            </section>
 
-    <div class="form-group">
-        <label for="id_addskubarcode">Add SKU Barcode:</label>
-        <input type="checkbox" name="addskubarcode" id="id_addskubarcode">
-        <small id="hint_id_addskubarcode" class="form-text text-muted">Display SKU barcode on devices</small>
-    </div>
+            <section class="settings-panel settings-panel-wide">
+                <div class="panel-heading">
+                    <p class="panel-kicker">Display</p>
+                    <h2>Show on device screens</h2>
+                </div>
 
-    <div class="form-group">
-        <label for="id_addshipment">Add Shipment:</label>
-        <input type="checkbox" name="addshipment" id="id_addshipment">
-        <small id="hint_id_addshipment" class="form-text text-muted">Display shipment number on devices</small>
-    </div>
+                <div class="toggle-grid">
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_addorder">Order Number</label>
+                            <small id="hint_id_addorder" class="form-text text-muted">Display the order number on devices</small>
+                        </div>
+                        <input type="checkbox" name="addorder" id="id_addorder">
+                    </div>
 
-    <div class="form-group">
-        <label for="id_beep">Beep:</label>
-        <input type="checkbox" name="beep" id="id_beep">
-        <small id="hint_id_beep" class="form-text text-muted">Beep device when activating</small>
-    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_addproductname">Item Name</label>
+                            <small id="hint_id_addproductname" class="form-text text-muted">Display the item name on devices</small>
+                        </div>
+                        <input type="checkbox" name="addproductname" id="id_addproductname">
+                    </div>
 
-    <div class="form-group">
-        <label for="id_autosubmit">Auto Submit:</label>
-        <input type="checkbox" name="autosubmit" id="id_autosubmit">
-        <small id="hint_id_autosubmit" class="form-text text-muted">Light devices automatically for any order/shipment scanned</small>
-    </div>
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_addupcbarcode">UPC Barcode</label>
+                            <small id="hint_id_addupcbarcode" class="form-text text-muted">Display the UPC barcode on devices</small>
+                        </div>
+                        <input type="checkbox" name="addupcbarcode" id="id_addupcbarcode">
+                    </div>
 
-    <button id="save" class="btn btn-info">Save</button>
-    <div id="logout-button-container"></div>
-    <div id="consoleLog" class="console-log"></div>
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_addskubarcode">SKU Barcode</label>
+                            <small id="hint_id_addskubarcode" class="form-text text-muted">Display the SKU barcode on devices</small>
+                        </div>
+                        <input type="checkbox" name="addskubarcode" id="id_addskubarcode">
+                    </div>
+
+                    <div class="toggle-card">
+                        <div class="toggle-copy">
+                            <label for="id_addshipment">Shipment</label>
+                            <small id="hint_id_addshipment" class="form-text text-muted">Display the shipment number on devices</small>
+                        </div>
+                        <input type="checkbox" name="addshipment" id="id_addshipment">
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <div class="settings-actions">
+            <button id="save" class="btn btn-info">Save Settings</button>
+            <div id="logout-button-container"></div>
+        </div>
+
+        <section class="log-panel">
+            <div class="panel-heading log-heading">
+                <p class="panel-kicker">Activity</p>
+                <h2>Extension Log</h2>
+            </div>
+            <div id="consoleLog" class="console-log"></div>
+        </section>
+    </main>
 
     <script src="../js/options.js"></script>
 </body>

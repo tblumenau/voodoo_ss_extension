@@ -208,8 +208,6 @@ function doKill(element) {
 }
 
 async function doImageClickWork(target, attribute) {
-    console.log('doing click for ' + attribute);
-
     const parentDiv = target.parentElement;
 
     let orderNumber = '';
@@ -222,26 +220,34 @@ async function doImageClickWork(target, attribute) {
     switch (attribute) {
         case 'c1':
             ({ orderNumber, itemSku, extra } = handleColumnC1(parentDiv, storedData));
+            console.log('doing click for c1', { orderNumber, itemSku, extra });
             break;
         case 'c2':
             ({ orderNumber, itemSku, extra } = handleColumnC2(parentDiv, storedData));
+            console.log('doing click for c2', { orderNumber, itemSku, extra });
             break;
         case 'p2':
             ({ orderNumber, itemSku, quantity, extra } = handlePanelP2(parentDiv, storedData));
+            console.log('doing click for p2', { orderNumber, itemSku, quantity, extra });
             break;
         case 'm1':
             ({ orderNumber, itemSku, extra } = handleMasterM1(parentDiv, storedData));
+            console.log('doing click for m1', { orderNumber, itemSku, extra });
             break;
         case 'm2':
             ({ orderNumber, itemSku, quantity, extra } = handleMasterM2(parentDiv, target, storedData));
+            console.log('doing click for m2', { orderNumber, itemSku, quantity, extra });
             break;
         case 'b1':
             ({ orderNumber, itemSku, extra } = handleBatchB1(parentDiv));
+            console.log('doing click for b1', { orderNumber, itemSku, extra });
             break;
         case 's1':
+            console.log('doing click for s1');
             handleScanS1(storedData);
             return; // Prevents further execution
         case 's2':
+            console.log('doing click for s2');
             handleScanS2(target,storedData);
             return; // Prevents further execution
         default:
@@ -394,6 +400,12 @@ function handleScanS1(storedData) {
     const array = [];
     const children = document.querySelectorAll('div[class^="item-list-container-"] div[class*="info-and-buttons-"]');
 
+    console.log('handleScanS1', {
+        orderNumber,
+        shipmentNumber,
+        itemCount: children.length
+    });
+
     children.forEach(childDiv => {
 
         // Extract SKU and sanitize
@@ -410,6 +422,15 @@ function handleScanS1(storedData) {
         // Extract and sanitize quantity
         const quantityElement = closestNextSibling(childDiv, 'div[class*="counts-"]');
         const quantity = sanitizeText(quantityElement.firstChild.innerText);
+
+        console.log('handleScanS1 item', {
+            productName,
+            itemSku,
+            itemUPC,
+            quantity,
+            orderNumber,
+            shipmentNumber
+        });
 
 
         const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber, productName);
@@ -493,6 +514,15 @@ function handleScanS2(target,storedData) {
     const quantityElement = closestNextSibling(infoDiv, 'div[class*="counts-"]');
 
     const quantity = sanitizeText(quantityElement.firstChild.innerText);
+
+    console.log('handleScanS2', {
+        productName,
+        itemSku,
+        itemUPC,
+        quantity,
+        orderNumber,
+        shipmentNumber
+    });
 
     // Generate command data
     const data = createCommandData(storedData, itemSku, itemUPC, quantity, orderNumber, shipmentNumber, productName);
