@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Voodoo ShipStation Extension",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Injects HTML buttons into ShipStation pages to make REST API calls to the Big Block server to activate lights.",
   "permissions": [
     "storage"

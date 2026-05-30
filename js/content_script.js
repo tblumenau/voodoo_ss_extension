@@ -138,41 +138,45 @@ function hasAncestorWithClass(element, classPrefix) {
  * @param {string} itemSku - The SKU of the item to send the "kill" command for.
  */
 function killOnDeviceForSKU(itemSku) {
-    // Check if the itemSku exists in the document's killNonces
-    if (itemSku in document.killNonces) {
-        // Set a flag to prevent auto-submit
-        document.preventAutoSubmit = true;
+    const killNonces = document.killNonces;
 
-        console.log('killing ' + itemSku);
-
-        // Retrieve the nonce for the itemSku
-        let nonce = document.killNonces[itemSku];
-
-        // Create an array to hold the command data
-        let array = [];
-
-        // Create an object to hold the command data
-        let data = {};
-        data['command'] = 'kill';
-        data['location'] = itemSku;
-        data['nonce'] = nonce;
-
-        // Add the command data object to the array
-        array.push(data);
-
-        // Send a message to the background script with the "kill" command
-        chrome.runtime.sendMessage({ action: "voodooDevices", array }, function (response) {
-            // For now, background.js only returns true in the done parameter
-            if (response.done) {
-                // Handle successful response (if needed)
-            } else {
-                // Handle unsuccessful response (if needed)
-            }
-        });
-
-        // Remove the nonce from killNonces
-        delete document.killNonces[itemSku];
+    if (!killNonces || !(itemSku in killNonces)) {
+        return;
     }
+
+    // Check if the itemSku exists in the document's killNonces
+    // Set a flag to prevent auto-submit
+    document.preventAutoSubmit = true;
+
+    console.log('killing ' + itemSku);
+
+    // Retrieve the nonce for the itemSku
+    let nonce = killNonces[itemSku];
+
+    // Create an array to hold the command data
+    let array = [];
+
+    // Create an object to hold the command data
+    let data = {};
+    data['command'] = 'kill';
+    data['location'] = itemSku;
+    data['nonce'] = nonce;
+
+    // Add the command data object to the array
+    array.push(data);
+
+    // Send a message to the background script with the "kill" command
+    chrome.runtime.sendMessage({ action: "voodooDevices", array }, function (response) {
+        if (response.done) {
+            console.log('Device commands sent successfully');
+        } else {
+            console.error('Failed to send device commands');
+        }
+
+    });
+
+    // Remove the nonce from killNonces
+    delete killNonces[itemSku];
 }
 
 /**
@@ -246,10 +250,10 @@ async function doImageClickWork(target, attribute) {
     }
 
     chrome.runtime.sendMessage({ action: "voodooCall", itemSku: itemSku, orderNumber: orderNumber, quantity: quantity, extra: extra }, function (response) {
-        // for now, background.js only returns true in the done parameter
         if (response.done) {
-        }
-        else {
+            console.log('Device commands sent successfully');
+        } else {
+            console.error('Failed to send device commands');
         }
     });
 }
@@ -347,11 +351,45 @@ function handleBatchB1(parentDiv) {
     return { orderNumber, itemSku, extra };
 }
 
-function handleScanS1(storedData) {
-    const infoChildren = document.querySelector('div[class^="scan-page-"] div[class^="body-header-"]').children;
+function normalizeScanHeaderLabel(text) {
+    return text.replace(/:/g, '').trim().toLowerCase();
+}
 
-    const orderNumber = infoChildren[3].innerText;
-    const shipmentNumber = infoChildren[1].innerText;
+function getScanHeaderValue(label) {
+    const normalizedLabel = normalizeScanHeaderLabel(label);
+
+    const dataPairs = document.querySelectorAll('div[class^="scan-page-"] div[class*="data-pair-"]');
+    for (const pair of dataPairs) {
+        const labelElement = pair.firstElementChild;
+        const valueElement = labelElement ? labelElement.nextElementSibling : null;
+
+        if (!labelElement || !valueElement) {
+            continue;
+        }
+
+        if (normalizeScanHeaderLabel(labelElement.innerText) === normalizedLabel) {
+            return valueElement.innerText.trim();
+        }
+    }
+
+    const labels = document.querySelectorAll('div[class^="scan-page-"] span[class^="label-"]');
+    for (const labelElement of labels) {
+        if (normalizeScanHeaderLabel(labelElement.innerText) === normalizedLabel) {
+            return labelElement.nextElementSibling?.innerText?.trim() || '';
+        }
+    }
+
+    return '';
+}
+
+function isVerifiedScanCount(div) {
+    return div.matches('div[class*="verified-quantity-count-"]') ||
+        div.parentElement?.matches('div[class*="verified-"]');
+}
+
+function handleScanS1(storedData) {
+    const orderNumber = getScanHeaderValue('Order');
+    const shipmentNumber = getScanHeaderValue('Shipment');
 
     const array = [];
     const children = document.querySelectorAll('div[class^="item-list-container-"] div[class*="info-and-buttons-"]');
@@ -434,10 +472,8 @@ function generateKillNonce(storedData, orderNumber, shipmentNumber, itemSku, qua
 
 function handleScanS2(target,storedData) {
 
-    let infoChildren = document.querySelector('div[class^="scan-page-"] div[class^="body-header-"]').children;
-
-    let orderNumber = infoChildren[3].innerText;
-    let shipmentNumber = infoChildren[1].innerText;
+    let orderNumber = getScanHeaderValue('Order');
+    let shipmentNumber = getScanHeaderValue('Shipment');
 
     let infoDiv = target.parentElement.parentElement;
     infoDiv = closestPreviousSibling(infoDiv, 'div[class*="info-and-buttons-"]');
@@ -517,13 +553,12 @@ function shouldSkipAddingButton(div, type) {
     if (type !== 'm1' && type !== 'm2' && hasAncestorWithClass(div, 'order-details-drawer')) return true;
 
     if (type === 's1') {
-        let sibling = div.previousElementSibling;
-        if (!sibling || !sibling.matches('span[class^="label-"]') || sibling.innerText !== 'Order') return true;
+        const labelElement = div.matches('div[class*="data-pair-"]') ? div.firstElementChild : div.previousElementSibling;
+        if (!labelElement || normalizeScanHeaderLabel(labelElement.innerText) !== 'order') return true;
     }
 
     if (type === 's2') {
-        if (div.matches('div[class*="verified-quantity-count-"]')) return true;
-        if (div.parentElement.matches('div[class*="verified-"]')) return true;
+        if (isVerifiedScanCount(div)) return true;
     }
 
     return false;
@@ -630,6 +665,18 @@ async function addButtonToDivIfNeeded(div, type) {
     }
 }
 
+function findMatchingNodes(node, selector) {
+    const matches = [];
+
+    if (node.matches?.(selector)) {
+        matches.push(node);
+    }
+
+    matches.push(...node.querySelectorAll(selector));
+
+    return matches;
+}
+
 
 // MutationObserver callback function
 // This is called whenever anything changes in the interface
@@ -704,15 +751,15 @@ const mutationCallback = function (mutationsList, observer) {
                     node.querySelectorAll('div[class^="grid-page-"] div[class^="batch-title"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 'b1');
                     });
-                    node.querySelectorAll('div[class^="scan-page-"] span[class^="info-"]').forEach(childSpan => {
-                        addButtonToDivIfNeeded(childSpan, 's1');
+                    findMatchingNodes(node, 'div[class^="scan-page-"] span[class^="info-"], div[class^="scan-page-"] div[class*="data-pair-"]').forEach(childDiv => {
+                        addButtonToDivIfNeeded(childDiv, 's1');
                     });
-                    node.querySelectorAll('div[class^="scan-page-"] div[class^="item-list-"] div[class*="item-count-"]').forEach(childDiv => {
+                    findMatchingNodes(node, 'div[class^="scan-page-"] div[class^="item-list-"] div[class*="item-count-"]').forEach(childDiv => {
                         addButtonToDivIfNeeded(childDiv, 's2');
                     });
 
-                    node.querySelectorAll('div[class^="scan-page-"] div[class^="item-list-"] div[class*="item-count-"]').forEach(childDiv => {
-                        if (childDiv.parentElement.matches('div[class*="verified-"]')) {
+                    findMatchingNodes(node, 'div[class^="scan-page-"] div[class^="item-list-"] div[class*="item-count-"]').forEach(childDiv => {
+                        if (isVerifiedScanCount(childDiv)) {
                             // console.log('verified count');
                             doKill(childDiv);
                         }
