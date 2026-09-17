@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Voodoo ShipStation Extension",
-  "version": "1.1",
-  "description": "Injects HTML buttons into ShipStation pages to make REST API calls to the Big Block server to activate lights.",
+  "name": "Voodoo Pick-to-Light for ShipStation",
+  "version": "1.2",
+  "description": "Wireless pick-to-light for ShipStation: light up the right bin, SKU and quantity from the order page. No WMS integration needed.",
   "permissions": [
     "storage"
   ],
